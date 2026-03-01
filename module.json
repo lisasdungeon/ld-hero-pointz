@@ -35,7 +35,9 @@
     }
   ],
   "socket": true,
-  "protected": true,
-  "license": "LICENSE",
-  "licenseURL": "https://github.com/RNK-Enterprise/rnk-reserves/blob/main/LICENSE"
+  "flags": {
+    "rnk-reserves": {
+      "copyright": "© 2026 RNK Enterprise. All rights reserved. This module is protected by intellectual property laws. Unauthorized modification, reverse engineering, or redistribution is prohibited."
+    }
+  }
 }
