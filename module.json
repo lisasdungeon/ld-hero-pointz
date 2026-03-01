@@ -1,16 +1,15 @@
 {
   "id": "rnk-reserves",
   "title": "RNK™ Reserves",
-  "description": "Hero Points system for D&D 2024, with GM controls and player spending buttons on rolls.<br><a href='https://www.patreon.com/RagNaroks'><b>Full updates & exclusives on Patreon</b></a>.",
+  "description": "Hero Points system for D&D 2024, with GM controls and player spending buttons on rolls. Premium module - support RNK on Patreon: https://www.patreon.com/RagNaroks",
   "authors": [
+    {
+      "name": "Odinn",
+      "url": "https://www.patreon.com/RagNaroks"
+    },
     {
       "name": "RNK Enterprise",
       "url": "https://github.com/RNK-Enterprise"
-    },
-    {
-      "name": "Odinn",
-      "url": "https://www.patreon.com/RagNaroks",
-      "discord": "RagNaroks#1234"
     }
   ],
   "version": "1.3.0",
@@ -20,7 +19,7 @@
   },
   "url": "https://github.com/RNK-Enterprise/rnk-reserves",
   "manifest": "https://github.com/RNK-Enterprise/rnk-reserves/releases/latest/download/module.json",
-  "download": "https://github.com/RNK-Enterprise/rnk-reserves/releases/download/v1.3.0/module.zip",
+  "download": "https://github.com/RNK-Enterprise/rnk-reserves/releases/latest/download/module.zip",
   "esmodules": [
     "src/main.js"
   ],
@@ -35,5 +34,8 @@
       "path": "languages/en.json"
     }
   ],
-  "socket": true
+  "socket": true,
+  "protected": true,
+  "license": "LICENSE",
+  "licenseURL": "https://github.com/RNK-Enterprise/rnk-reserves/blob/main/LICENSE"
 }
