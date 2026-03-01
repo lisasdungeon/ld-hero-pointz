@@ -17,7 +17,7 @@
     "minimum": "12",
     "verified": "13.0.0"
   },
-  "url": "https://github.com/RNK-Enterprise/rnk-reserves",
+  "url": "https://github.com/RNK-Enterprise/rnk-reserves-public",
   "manifest": "https://raw.githubusercontent.com/RNK-Enterprise/rnk-reserves-public/main/module.json",
   "download": "https://raw.githubusercontent.com/RNK-Enterprise/rnk-reserves-public/main/module.zip",
   "esmodules": [
