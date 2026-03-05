@@ -55,12 +55,12 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
       form.querySelector('.rnk-clear-all-log')?.addEventListener('click', async () => {
         const confirmed = await Dialog.confirm({
           title: 'Clear All Logs?',
-          content: 'Are you sure you want to permanently delete all hero point activity logs? This cannot be undone.'
+          content: 'Are you sure you want to permanently delete all hero point activity logs and reset all actor hero points? This cannot be undone.'
         });
 
         if (confirmed) {
-          clearHeroPointsLog();
-          ui.notifications.info('All activity logs cleared.');
+          await clearHeroPointsLog();
+          ui.notifications.info('All activity logs and hero points cleared.');
           this.render(true);
         }
       });
@@ -77,8 +77,8 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
           });
 
           if (confirmed) {
-            clearActorLog(actorId);
-            ui.notifications.info(`Logs cleared for ${actorName}.`);
+            await clearActorLog(actorId);
+            ui.notifications.info(`Logs and hero points cleared for ${actorName}.`);
             this.render(true);
           }
         });

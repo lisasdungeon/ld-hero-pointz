@@ -69,21 +69,37 @@ export function getActorLog(actorId) {
 }
 
 /**
- * Clear the entire log (GM only)
+ * Clear the entire log and reset all actor hero points (GM only)
  */
-export function clearHeroPointsLog() {
+export async function clearHeroPointsLog() {
   if (!game.user.isGM) return;
-  game.settings.set('rnk-reserves', 'heroPointsLog', []);
+  await game.settings.set('rnk-reserves', 'heroPointsLog', []);
+
+  // Reset hero points on all actors that have them
+  for (const actor of game.actors) {
+    const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints');
+    if (heroPoints !== undefined && heroPoints !== null) {
+      await actor.unsetFlag('rnk-reserves', 'heroPoints');
+      await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
+    }
+  }
 }
 
 /**
- * Clear logs for a specific actor (GM only)
+ * Clear logs for a specific actor and reset their hero points (GM only)
  */
-export function clearActorLog(actorId) {
+export async function clearActorLog(actorId) {
   if (!game.user.isGM) return;
   const currentLog = game.settings.get('rnk-reserves', 'heroPointsLog') || [];
   const filtered = currentLog.filter(entry => entry.actorId !== actorId);
-  game.settings.set('rnk-reserves', 'heroPointsLog', filtered);
+  await game.settings.set('rnk-reserves', 'heroPointsLog', filtered);
+
+  // Reset hero points on the actor
+  const actor = game.actors.get(actorId);
+  if (actor) {
+    await actor.unsetFlag('rnk-reserves', 'heroPoints');
+    await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
+  }
 }
 
 /**
