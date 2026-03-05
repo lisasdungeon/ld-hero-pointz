@@ -184,6 +184,9 @@ export function registerHooks() {
 
   // Level-up detection and refresh
   Hooks.on('preUpdateActor', (actor, updateData, options, userId) => {
+    // Respect the autoAward setting
+    if (!game.settings.get('rnk-reserves', 'autoAward')) return;
+
     const newLevel = foundry.utils.getProperty(updateData, 'system.details.level');
     if (newLevel !== undefined) {
       const oldLevel = actor.system.details?.level || 1;
@@ -229,6 +232,9 @@ export function registerHooks() {
 function initializeHeroPoints(actor) {
   // Skip NPCs — they must be explicitly enabled via the API
   if (actor.type === 'npc') return;
+
+  // Respect the autoAward setting
+  if (!game.settings.get('rnk-reserves', 'autoAward')) return;
 
   const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints');
   if (currentPoints === undefined) {
