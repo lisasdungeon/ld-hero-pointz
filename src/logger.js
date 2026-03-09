@@ -77,10 +77,15 @@ export async function clearHeroPointsLog() {
 
   // Reset hero points on all actors that have them
   for (const actor of game.actors) {
-    const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints');
-    if (heroPoints !== undefined && heroPoints !== null) {
-      await actor.unsetFlag('rnk-reserves', 'heroPoints');
-      await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
+    const updateData = {};
+    if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
+      updateData['-=flags.rnk-reserves.heroPoints'] = null;
+    }
+    if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
+      updateData['-=flags.rnk-reserves.heroPointsEnabled'] = null;
+    }
+    if (Object.keys(updateData).length > 0) {
+      await actor.update(updateData);
     }
   }
 }
@@ -97,8 +102,18 @@ export async function clearActorLog(actorId) {
   // Reset hero points on the actor
   const actor = game.actors.get(actorId);
   if (actor) {
-    await actor.unsetFlag('rnk-reserves', 'heroPoints');
-    await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
+    // Batch flag removals to avoid multiple hook triggers
+    const updateData = {};
+    if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
+      updateData['-=flags.rnk-reserves.heroPoints'] = null;
+    }
+    if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
+      updateData['-=flags.rnk-reserves.heroPointsEnabled'] = null;
+    }
+    // Only update if there are flags to remove
+    if (Object.keys(updateData).length > 0) {
+      await actor.update(updateData);
+    }
   }
 }
 
