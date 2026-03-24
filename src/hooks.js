@@ -104,7 +104,7 @@ async function handleHeroPointAction(actor, action, message) {
   const newPoints = heroPoints - 1;
   await actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
 
-  // Log the spending
+  // Log the spending (local client can still log if GM)
   if (game.user.isGM) {
     const actionLabel = action === 'deathSuccess' ? 'Death Save Success' : 'Add 1d6';
     logHeroPointSpending(
@@ -116,10 +116,12 @@ async function handleHeroPointAction(actor, action, message) {
     );
   }
 
-  // Emit socket to sync
-  emitSocketMessage('updateHeroPoints', {
+  // Emit socket to sync to other clients
+  emitSocketMessage('spendHeroPoint', {
     actorId: actor.id,
-    points: newPoints
+    points: newPoints,
+    action,
+    userId: game.user.id
   });
 
   // Apply the action

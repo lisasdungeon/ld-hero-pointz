@@ -39,22 +39,28 @@ export function emitSocketMessage(type, data) {
  */
 function handleHeroPointsUpdate(data) {
   const actor = game.actors.get(data.actorId);
-  if (actor) {
-    const oldPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
-    const newPoints = data.points;
-    actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
-    
-    // Log the update
-    if (game.user.isGM) {
-      logHeroPointSpending(
-        data.actorId,
-        actor.name,
-        Math.max(0, oldPoints - newPoints),
-        newPoints,
-        'awarded',
-        data.userId
-      );
-    }
+  if (!actor) return;
+
+  const oldPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const newPoints = data.points;
+
+  if (data.userId === game.user.id) {
+    // Originator already updated locally
+    return;
+  }
+
+  actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+
+  // Log the update
+  if (game.user.isGM) {
+    logHeroPointSpending(
+      data.actorId,
+      actor.name,
+      Math.max(0, oldPoints - newPoints),
+      newPoints,
+      'awarded',
+      data.userId
+    );
   }
 }
 
@@ -63,23 +69,27 @@ function handleHeroPointsUpdate(data) {
  */
 function handleHeroPointSpend(data) {
   const actor = game.actors.get(data.actorId);
-  if (actor) {
-    const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
-    if (currentPoints > 0) {
-      const newPoints = currentPoints - 1;
-      actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
-      
-      // Log the spending
-      if (game.user.isGM) {
-        logHeroPointSpending(
-          data.actorId,
-          actor.name,
-          1,
-          newPoints,
-          data.action || 'spent',
-          data.userId
-        );
-      }
-    }
+  if (!actor) return;
+
+  if (data.userId === game.user.id) {
+    // Avoid sender double-applying
+    return;
+  }
+
+  const oldPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const newPoints = Number.isInteger(data.points) ? data.points : Math.max(oldPoints - 1, 0);
+
+  actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+
+  // Log the spending (GM only)
+  if (game.user.isGM) {
+    logHeroPointSpending(
+      data.actorId,
+      actor.name,
+      oldPoints - newPoints,
+      newPoints,
+      data.action || 'spent',
+      data.userId
+    );
   }
 }
