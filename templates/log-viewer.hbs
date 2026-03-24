@@ -45,6 +45,9 @@
                 {{/if}}
               </td>
               <td class="text-center">
+                <button type="button" class="rnk-reduce-actor-points" data-actor-id="{{this.id}}" data-actor-name="{{this.name}}" data-current-points="{{this.heroPoints}}" title="Reduce hero points for this actor">
+                  <i class="fas fa-minus-circle"></i>
+                </button>
                 <button type="button" class="rnk-clear-actor-log" data-actor-id="{{this.id}}" data-actor-name="{{this.name}}" title="Clear logs for this actor">
                   <i class="fas fa-trash-alt"></i>
                 </button>

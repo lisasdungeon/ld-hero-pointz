@@ -77,15 +77,15 @@ export async function clearHeroPointsLog() {
 
   // Reset hero points on all actors that have them
   for (const actor of game.actors) {
-    const updateData = {};
-    if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
-      updateData['-=flags.rnk-reserves.heroPoints'] = null;
-    }
-    if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
-      updateData['-=flags.rnk-reserves.heroPointsEnabled'] = null;
-    }
-    if (Object.keys(updateData).length > 0) {
-      await actor.update(updateData);
+    try {
+      if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
+        await actor.unsetFlag('rnk-reserves', 'heroPoints');
+      }
+      if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
+        await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
+      }
+    } catch (e) {
+      console.warn(`Failed to clear flags for ${actor.name}:`, e);
     }
   }
 }
@@ -102,19 +102,44 @@ export async function clearActorLog(actorId) {
   // Reset hero points on the actor
   const actor = game.actors.get(actorId);
   if (actor) {
-    // Batch flag removals to avoid multiple hook triggers
-    const updateData = {};
-    if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
-      updateData['-=flags.rnk-reserves.heroPoints'] = null;
-    }
-    if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
-      updateData['-=flags.rnk-reserves.heroPointsEnabled'] = null;
-    }
-    // Only update if there are flags to remove
-    if (Object.keys(updateData).length > 0) {
-      await actor.update(updateData);
+    try {
+      if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
+        await actor.unsetFlag('rnk-reserves', 'heroPoints');
+      }
+      if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
+        await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
+      }
+    } catch (e) {
+      console.warn(`Failed to clear flags for ${actor.name}:`, e);
     }
   }
+}
+
+/**
+ * Reduce a specific actor's hero points by an amount (GM only)
+ * @param {string} actorId - The actor's ID
+ * @param {number} amount - Number of points to reduce
+ */
+export async function reduceActorHeroPoints(actorId, amount) {
+  if (!game.user.isGM || !amount || amount < 0) return;
+  
+  const actor = game.actors.get(actorId);
+  if (!actor) return;
+  
+  const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const newPoints = Math.max(0, currentPoints - amount);
+  
+  await actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+  
+  // Log the reduction
+  logHeroPointSpending(
+    actorId,
+    actor.name,
+    amount,
+    newPoints,
+    'reduce',
+    game.user.id
+  );
 }
 
 /**

@@ -2,7 +2,7 @@
  * RNK Reserves Log Viewer Application
  * Displays hero point spending history to the GM
  */
-import { getHeroPointsLog, getActorsSummary, clearHeroPointsLog, clearActorLog } from '../logger.js';
+import { getHeroPointsLog, getActorsSummary, clearHeroPointsLog, clearActorLog, reduceActorHeroPoints } from '../logger.js';
 
 export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -81,6 +81,38 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
             ui.notifications.info(`Logs and hero points cleared for ${actorName}.`);
             this.render(true);
           }
+        });
+      });
+
+      // Reduce actor hero points buttons
+      form.querySelectorAll('.rnk-reduce-actor-points').forEach(btn => {
+        btn.addEventListener('click', async (event) => {
+          const actorId = event.currentTarget.dataset.actorId;
+          const actorName = event.currentTarget.dataset.actorName;
+          const currentPoints = parseInt(event.currentTarget.dataset.currentPoints) || 0;
+          
+          const dialog = new Dialog({
+            title: `Reduce Hero Points for ${actorName}`,
+            content: `<form><div class="form-group"><label>Current Points: ${currentPoints}</label></div><div class="form-group"><label>Reduce By:</label><input type="number" id="reduce-amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`,
+            buttons: {
+              reduce: {
+                label: 'Reduce',
+                callback: async (html) => {
+                  const amount = parseInt(html.querySelector('#reduce-amount').value) || 1;
+                  if (amount > 0 && amount <= currentPoints) {
+                    await reduceActorHeroPoints(actorId, amount);
+                    ui.notifications.info(`Reduced ${amount} hero point(s) for ${actorName}.`);
+                    this.render(true);
+                  }
+                }
+              },
+              cancel: {
+                label: 'Cancel'
+              }
+            },
+            default: 'reduce'
+          });
+          dialog.render(true);
         });
       });
 
