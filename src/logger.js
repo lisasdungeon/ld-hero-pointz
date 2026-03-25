@@ -78,14 +78,10 @@ export async function clearHeroPointsLog() {
   // Reset hero points on all actors that have them
   for (const actor of game.actors) {
     try {
-      if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
-        await actor.unsetFlag('rnk-reserves', 'heroPoints');
-      }
-      if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
-        await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
-      }
+      await actor.setFlag('rnk-reserves', 'heroPoints', 0);
+      await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
     } catch (e) {
-      console.warn(`Failed to clear flags for ${actor.name}:`, e);
+      console.warn(`Failed to reset flags for ${actor.name}:`, e);
     }
   }
 }
@@ -103,14 +99,10 @@ export async function clearActorLog(actorId) {
   const actor = game.actors.get(actorId);
   if (actor) {
     try {
-      if (actor.getFlag('rnk-reserves', 'heroPoints') !== undefined) {
-        await actor.unsetFlag('rnk-reserves', 'heroPoints');
-      }
-      if (actor.getFlag('rnk-reserves', 'heroPointsEnabled') !== undefined) {
-        await actor.unsetFlag('rnk-reserves', 'heroPointsEnabled');
-      }
+      await actor.setFlag('rnk-reserves', 'heroPoints', 0);
+      await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
     } catch (e) {
-      console.warn(`Failed to clear flags for ${actor.name}:`, e);
+      console.warn(`Failed to reset flags for ${actor.name}:`, e);
     }
   }
 }
@@ -153,8 +145,8 @@ export function getActorsSummary() {
     const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints');
     const isEnabled = actor.getFlag('rnk-reserves', 'heroPointsEnabled');
     
-    // Include if they have points or are NPCs with enabled flag
-    if (heroPoints !== undefined && heroPoints !== null) {
+    // Include if they have points or are explicitly enabled
+    if (heroPoints > 0 || isEnabled) {
       summary[actor.id] = {
         id: actor.id,
         name: actor.name,
