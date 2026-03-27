@@ -14,8 +14,8 @@
   ],
   "version": "1.3.6",
   "compatibility": {
-    "minimum": "12",
-    "verified": "13.0.0"
+    "minimum": 12,
+    "verified": 13
   },
   "url": "https://github.com/RNK-Enterprise/rnk-reserves",
   "manifest": "https://raw.githubusercontent.com/RNK-Enterprise/rnk-reserves/main/module.json",
