@@ -98,7 +98,7 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
               reduce: {
                 label: 'Reduce',
                 callback: async (html) => {
-                  const amount = parseInt(html.querySelector('#reduce-amount').value) || 1;
+                  const amount = parseInt((html[0] || html).querySelector('#reduce-amount').value) || 1;
                   if (amount > 0 && amount <= currentPoints) {
                     await reduceActorHeroPoints(actorId, amount);
                     ui.notifications.info(`Reduced ${amount} hero point(s) for ${actorName}.`);
