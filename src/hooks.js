@@ -47,14 +47,14 @@ function addHeroPointButtons(message, html, data) {
   
   let actionsHtml = '';
   if (isDeathSave) {
-    actionsHtml = `<button class="rnk-reserves-btn" data-action="deathSuccess">Success (1)</button>`;
+    actionsHtml = `<button class="rnk-reserves-btn" data-action="deathSuccess">${game.i18n.localize('RNKRESERVES.Chat.DeathSuccess')}</button>`;
   } else if (isD20) {
-    actionsHtml = `<button class="rnk-reserves-btn" data-action="addD6">Add 1d6 (1)</button>`;
+    actionsHtml = `<button class="rnk-reserves-btn" data-action="addD6">${game.i18n.localize('RNKRESERVES.Chat.AddD6')}</button>`;
   }
 
   buttonContainer.innerHTML = `
     <div class="rnk-reserves-header">
-      <span>Hero Points: ${heroPoints}</span>
+      <span>${game.i18n.format('RNKRESERVES.Chat.HeroPoints', { points: heroPoints })}</span>
     </div>
     <div class="rnk-reserves-actions">
       ${actionsHtml}
@@ -84,17 +84,17 @@ function addHeroPointButtons(message, html, data) {
 async function handleHeroPointAction(actor, action, message) {
   const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
   if (heroPoints <= 0) {
-    ui.notifications.warn('No Hero Points available!');
+    ui.notifications.warn(game.i18n.localize('RNKRESERVES.Chat.NoPoints'));
     return;
   }
 
   // Confirm spending
   const content = action === 'deathSuccess' 
-    ? "Spend 1 Hero Point to turn this failed Death Save into a success?" 
-    : "Spend 1 Hero Point to add 1d6 to this roll?";
+    ? game.i18n.localize('RNKRESERVES.Chat.SpendDeathSave')
+    : game.i18n.localize('RNKRESERVES.Chat.SpendAddD6');
     
   const confirmed = await Dialog.confirm({
-    title: 'Spend Hero Point?',
+    title: game.i18n.localize('RNKRESERVES.Chat.SpendTitle'),
     content: content
   });
 
@@ -141,13 +141,14 @@ async function handleHeroPointAction(actor, action, message) {
 async function handleAddD6(message, actor) {
   const bonusRoll = await new Roll('1d6').evaluate();
   const totalBonus = bonusRoll.total;
+  const flavor = message.flavor || game.i18n.localize('RNKRESERVES.Chat.RollDefaultFlavor');
 
   await bonusRoll.toMessage({
     speaker: ChatMessage.getSpeaker({actor}),
-    flavor: `Hero Point: Adding 1d6 to ${message.flavor || 'roll'}`
+    flavor: game.i18n.format('RNKRESERVES.Chat.AddD6Flavor', { flavor })
   });
 
-  ui.notifications.info(`Added ${totalBonus} to the roll!`);
+  ui.notifications.info(game.i18n.format('RNKRESERVES.Chat.AddD6Success', { bonus: totalBonus }));
 }
 
 /**
@@ -156,12 +157,12 @@ async function handleAddD6(message, actor) {
 async function handleDeathSaveSuccess(message, actor) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({actor}),
-    content: `<div class="dnd5e chat-card"><header class="card-header"><h3>Hero Point: Death Save Success!</h3></header>
-              <div class="card-content">The failed death saving throw has been turned into a SUCCESS.</div></div>`,
-    flavor: "Hero Point spent for Death Save Success"
+    content: `<div class="dnd5e chat-card"><header class="card-header"><h3>${game.i18n.localize('RNKRESERVES.Chat.DeathSaveTitle')}</h3></header>
+              <div class="card-content">${game.i18n.localize('RNKRESERVES.Chat.DeathSaveContent')}</div></div>`,
+    flavor: game.i18n.localize('RNKRESERVES.Chat.DeathSaveFlavor')
   });
   
-  ui.notifications.info("Death Saving Throw turned into success!");
+  ui.notifications.info(game.i18n.localize('RNKRESERVES.Chat.DeathSaveSuccess'));
 }
 
 
@@ -200,7 +201,11 @@ export function registerHooks() {
         foundry.utils.setProperty(updateData, 'flags.rnk-reserves.heroPoints', newMax);
         
         // Notify the user
-        ui.notifications.info(`${actor.name} reached level ${newLevel}! Hero Points refreshed to ${newMax}.`);
+        ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.LeveledUp', {
+          name: actor.name,
+          level: newLevel,
+          max: newMax
+        }));
       }
     }
   });
@@ -223,7 +228,7 @@ export function registerHooks() {
   Hooks.on('updateActor', (actor, data, options, userId) => {
     if (foundry.utils.hasProperty(data, 'flags.rnk-reserves.heroPoints')) {
       const points = foundry.utils.getProperty(data, 'flags.rnk-reserves.heroPoints');
-      console.log(`RNK Reserves | Actor ${actor.name} Hero Points updated to: ${points}`);
+      console.log(`RNK™ Reserves | Actor ${actor.name} Hero Points updated to: ${points}`);
     }
   });
 }
@@ -264,13 +269,13 @@ function addGMControls(sheet, html, data) {
   gmControls.className = 'rnk-reserves-gm-controls';
   gmControls.innerHTML = `
     <div class="rnk-reserves-gm-header">
-      <span>Reserves: ${heroPoints}/${maxPoints}</span>
+      <span>${game.i18n.format('RNKRESERVES.GM.Header', { current: heroPoints, max: maxPoints })}</span>
     </div>
     <div class="rnk-reserves-gm-actions">
-      <button type="button" class="rnk-reserves-gm-btn" data-action="award" title="Grant 1 Hero Point"><i class="fas fa-plus"></i></button>
-      <button type="button" class="rnk-reserves-gm-btn" data-action="subtract" title="Remove 1 Hero Point"><i class="fas fa-minus"></i></button>
-      <button type="button" class="rnk-reserves-gm-btn" data-action="reset" title="Refresh to Level Max"><i class="fas fa-sync"></i></button>
-      <button type="button" class="rnk-reserves-gm-btn" data-action="set-zero" title="Set to 0"><i class="fas fa-times"></i></button>
+      <button type="button" class="rnk-reserves-gm-btn" data-action="award" title="${game.i18n.localize('RNKRESERVES.GM.AwardTitle')}"><i class="fas fa-plus"></i></button>
+      <button type="button" class="rnk-reserves-gm-btn" data-action="subtract" title="${game.i18n.localize('RNKRESERVES.GM.SubtractTitle')}"><i class="fas fa-minus"></i></button>
+      <button type="button" class="rnk-reserves-gm-btn" data-action="reset" title="${game.i18n.localize('RNKRESERVES.GM.ResetTitle')}"><i class="fas fa-sync"></i></button>
+      <button type="button" class="rnk-reserves-gm-btn" data-action="set-zero" title="${game.i18n.localize('RNKRESERVES.GM.SetZeroTitle')}"><i class="fas fa-times"></i></button>
     </div>
   `;
 
@@ -320,8 +325,12 @@ async function handleGMAction(actor, action, currentPoints, maxPoints) {
   // Emit socket to sync
   emitSocketMessage('updateHeroPoints', {
     actorId: actor.id,
-    points: newPoints
+    points: newPoints,
+    userId: game.user.id
   });
 
-  ui.notifications.info(`${actor.name} Hero Points set to ${newPoints}`);
+  ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.HeroPointsSet', {
+    name: actor.name,
+    points: newPoints
+  }));
 }

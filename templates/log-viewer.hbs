@@ -1,34 +1,34 @@
 <div class="rnk-log-viewer-container">
   <form class="rnk-log-viewer">
     <header>
-      <h2>Hero Points Activity Log</h2>
+      <h2>{{localize "RNKRESERVES.Log.Title"}}</h2>
       <div class="log-controls">
         <select class="rnk-filter-actor">
-          <option value="">All Actors</option>
+          <option value="">{{localize "RNKRESERVES.Log.AllActors"}}</option>
           {{#each summary}}
             <option value="{{this.id}}">{{this.name}}</option>
           {{/each}}
         </select>
-        <button type="button" class="rnk-export-log" title="Export log as JSON">
-          <i class="fas fa-download"></i> Export
+        <button type="button" class="rnk-export-log" title="{{localize 'RNKRESERVES.Log.ExportTitle'}}">
+          <i class="fas fa-download"></i> {{localize "RNKRESERVES.Log.Export"}}
         </button>
-        <button type="button" class="rnk-clear-all-log" title="Clear all logs permanently">
-          <i class="fas fa-trash"></i> Clear All
+        <button type="button" class="rnk-clear-all-log" title="{{localize 'RNKRESERVES.Log.ClearAllTitle'}}">
+          <i class="fas fa-trash"></i> {{localize "RNKRESERVES.Log.ClearAll"}}
         </button>
       </div>
     </header>
 
     <section class="log-summary">
-      <h3>Current Summary</h3>
-      <p>Total Entries: <strong>{{totalEntries}}</strong> | Total Points Spent: <strong>{{totalSpent}}</strong></p>
+      <h3>{{localize "RNKRESERVES.Log.CurrentSummary"}}</h3>
+      <p>{{localize "RNKRESERVES.Log.TotalEntries"}}: <strong>{{totalEntries}}</strong> | {{localize "RNKRESERVES.Log.TotalSpent"}}: <strong>{{totalSpent}}</strong></p>
       <table class="rnk-summary-table">
         <thead>
           <tr>
-            <th>Actor</th>
-            <th>Type</th>
-            <th>Current Points</th>
-            <th>Last Activity</th>
-            <th>Actions</th>
+            <th>{{localize "RNKRESERVES.Log.Actor"}}</th>
+            <th>{{localize "RNKRESERVES.Log.Type"}}</th>
+            <th>{{localize "RNKRESERVES.Log.CurrentPoints"}}</th>
+            <th>{{localize "RNKRESERVES.Log.LastActivity"}}</th>
+            <th>{{localize "RNKRESERVES.Log.Actions"}}</th>
           </tr>
         </thead>
         <tbody>
@@ -41,14 +41,14 @@
                 {{#if this.lastSpend}}
                   {{this.lastSpend.action}} - {{this.lastSpend.date}}
                 {{else}}
-                  Never
+                  {{localize "RNKRESERVES.Log.Never"}}
                 {{/if}}
               </td>
               <td class="text-center">
-                <button type="button" class="rnk-reduce-actor-points" data-actor-id="{{this.id}}" data-actor-name="{{this.name}}" data-current-points="{{this.heroPoints}}" title="Reduce hero points for this actor">
+                <button type="button" class="rnk-reduce-actor-points" data-actor-id="{{this.id}}" data-actor-name="{{this.name}}" data-current-points="{{this.heroPoints}}" title="{{localize 'RNKRESERVES.Log.ReduceActorTitle'}}">
                   <i class="fas fa-minus-circle"></i>
                 </button>
-                <button type="button" class="rnk-clear-actor-log" data-actor-id="{{this.id}}" data-actor-name="{{this.name}}" title="Clear logs for this actor">
+                <button type="button" class="rnk-clear-actor-log" data-actor-id="{{this.id}}" data-actor-name="{{this.name}}" title="{{localize 'RNKRESERVES.Log.ClearActorTitle'}}">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </td>
@@ -59,17 +59,17 @@
     </section>
 
     <section class="log-entries">
-      <h3>Recent Activity</h3>
+      <h3>{{localize "RNKRESERVES.Log.RecentActivity"}}</h3>
       {{#if entries}}
         <table class="rnk-log-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Actor</th>
-              <th>Action</th>
-              <th>Points Spent</th>
-              <th>Points Remaining</th>
-              <th>By</th>
+              <th>{{localize "RNKRESERVES.Log.Date"}}</th>
+              <th>{{localize "RNKRESERVES.Log.Actor"}}</th>
+              <th>{{localize "RNKRESERVES.Log.Action"}}</th>
+              <th>{{localize "RNKRESERVES.Log.PointsSpent"}}</th>
+              <th>{{localize "RNKRESERVES.Log.PointsRemaining"}}</th>
+              <th>{{localize "RNKRESERVES.Log.By"}}</th>
             </tr>
           </thead>
           <tbody>
@@ -86,7 +86,7 @@
           </tbody>
         </table>
       {{else}}
-        <p class="text-center text-muted">No activity logged yet.</p>
+        <p class="text-center text-muted">{{localize "RNKRESERVES.Log.Empty"}}</p>
       {{/if}}
     </section>
   </form>

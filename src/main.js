@@ -13,8 +13,6 @@ class RNKReservesModule {
   static ID = 'rnk-reserves';
 
   static init() {
-    console.log('RNK Reserves | Initializing module');
-
     // Register settings
     registerSettings();
 
@@ -26,7 +24,6 @@ class RNKReservesModule {
   }
 
   static ready() {
-    console.log('RNK Reserves | Module ready');
     initializeLogger();
   }
 
@@ -38,13 +35,13 @@ class RNKReservesModule {
    */
   static async enableNPC(actorId, points = 1) {
     if (!game.user.isGM) {
-      ui.notifications.warn('Only the GM can enable NPC Hero Points.');
+      ui.notifications.warn(game.i18n.localize('RNKRESERVES.Messages.GMOnlyEnableNPC'));
       return;
     }
 
     const actor = game.actors.get(actorId);
     if (!actor) {
-      ui.notifications.error(`Actor not found: ${actorId}`);
+      ui.notifications.error(game.i18n.format('RNKRESERVES.Messages.ActorNotFound', { actorId }));
       return;
     }
 
@@ -53,7 +50,11 @@ class RNKReservesModule {
     await actor.setFlag('rnk-reserves', 'heroPointsEnabled', true);
     await actor.setFlag('rnk-reserves', 'heroPoints', clamped);
 
-    ui.notifications.info(`Hero Points enabled for ${actor.name} (${actor.type}) with ${clamped} points.`);
+    ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.NpcEnabled', {
+      name: actor.name,
+      type: actor.type,
+      points: clamped
+    }));
   }
 
   /**
@@ -63,20 +64,20 @@ class RNKReservesModule {
    */
   static async disableNPC(actorId) {
     if (!game.user.isGM) {
-      ui.notifications.warn('Only the GM can disable NPC Hero Points.');
+      ui.notifications.warn(game.i18n.localize('RNKRESERVES.Messages.GMOnlyDisableNPC'));
       return;
     }
 
     const actor = game.actors.get(actorId);
     if (!actor) {
-      ui.notifications.error(`Actor not found: ${actorId}`);
+      ui.notifications.error(game.i18n.format('RNKRESERVES.Messages.ActorNotFound', { actorId }));
       return;
     }
 
     await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
     await actor.setFlag('rnk-reserves', 'heroPoints', 0);
 
-    ui.notifications.info(`Hero Points disabled for ${actor.name}.`);
+    ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.NpcDisabled', { name: actor.name }));
   }
 }
 

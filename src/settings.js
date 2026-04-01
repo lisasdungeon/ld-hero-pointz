@@ -7,9 +7,9 @@ import { RNKReservesLogViewer } from './apps/LogViewer.js';
 export function registerSettings() {
   // Register the Settings Menu
   game.settings.registerMenu('rnk-reserves', 'reservesMenu', {
-    name: 'Hero Point Management',
-    label: 'Open Management UI',
-    hint: 'Configure Hero Points and manage actor assignments.',
+    name: 'RNKRESERVES.Menu.ManagementName',
+    label: 'RNKRESERVES.Menu.ManagementLabel',
+    hint: 'RNKRESERVES.Menu.ManagementHint',
     icon: 'fas fa-shield-alt',
     type: RNKReserves,
     restricted: true
@@ -17,9 +17,9 @@ export function registerSettings() {
 
   // Register the Log Viewer Menu
   game.settings.registerMenu('rnk-reserves', 'logViewerMenu', {
-    name: 'Hero Point Activity Log',
-    label: 'View Activity Log',
-    hint: 'View all hero point spending history and actor summaries.',
+    name: 'RNKRESERVES.Menu.LogName',
+    label: 'RNKRESERVES.Menu.LogLabel',
+    hint: 'RNKRESERVES.Menu.LogHint',
     icon: 'fas fa-book',
     type: RNKReservesLogViewer,
     restricted: true
@@ -35,8 +35,8 @@ export function registerSettings() {
 
   // Auto-award at session start
   game.settings.register('rnk-reserves', 'autoAward', {
-    name: 'Auto-Award Points',
-    hint: 'If enabled, checks for point refresh on login/session start based on level.',
+    name: 'RNKRESERVES.Settings.AutoAwardName',
+    hint: 'RNKRESERVES.Settings.AutoAwardHint',
     scope: 'world',
     config: true,
     type: Boolean,

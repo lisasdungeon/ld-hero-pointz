@@ -40,7 +40,7 @@ export function logHeroPointSpending(actorId, actorName, pointsSpent, pointsRema
     pointsRemaining: pointsRemaining,
     action: action,
     userId: userId || game.user.id,
-    userName: (game.users.get(userId || game.user.id))?.name || 'Unknown'
+    userName: (game.users.get(userId || game.user.id))?.name || game.i18n.localize('RNKRESERVES.Messages.UnknownUser')
   };
 
   const currentLog = game.settings.get('rnk-reserves', 'heroPointsLog') || [];
@@ -81,7 +81,7 @@ export async function clearHeroPointsLog() {
       await actor.setFlag('rnk-reserves', 'heroPoints', 0);
       await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
     } catch (e) {
-      console.warn(`Failed to reset flags for ${actor.name}:`, e);
+      console.warn(game.i18n.format('RNKRESERVES.Messages.LogResetFailed', { name: actor.name }), e);
     }
   }
 }
@@ -102,7 +102,7 @@ export async function clearActorLog(actorId) {
       await actor.setFlag('rnk-reserves', 'heroPoints', 0);
       await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
     } catch (e) {
-      console.warn(`Failed to reset flags for ${actor.name}:`, e);
+      console.warn(game.i18n.format('RNKRESERVES.Messages.LogResetFailed', { name: actor.name }), e);
     }
   }
 }
@@ -178,7 +178,7 @@ export function exportLogAsJSON() {
   
   return {
     exported: new Date().toISOString(),
-    totalEntries: log.entries,
+    totalEntries: log.length,
     summary: summary,
     entries: log
   };

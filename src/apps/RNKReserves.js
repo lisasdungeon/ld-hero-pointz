@@ -12,7 +12,7 @@ export class RNKReserves extends foundry.applications.api.HandlebarsApplicationM
     tag: 'form',
     window: {
       icon: 'fas fa-shield-alt',
-      title: 'RNK Reserves',
+      title: 'RNK™ Reserves',
       resizable: true
     },
     position: {
@@ -53,7 +53,7 @@ export class RNKReserves extends foundry.applications.api.HandlebarsApplicationM
       htmlElement_obj.querySelector('.rnk-get-uuid')?.addEventListener('click', event => {
         const tokens = canvas.tokens.controlled;
         if (tokens.length === 0) {
-          return ui.notifications.warn("No token selected on the canvas!");
+          return ui.notifications.warn(game.i18n.localize('RNKRESERVES.Messages.NoTokenSelected'));
         }
         const actor = tokens[0].actor;
         if (!actor) return;
@@ -62,7 +62,7 @@ export class RNKReserves extends foundry.applications.api.HandlebarsApplicationM
         const uuidInput = htmlElement_obj.querySelector('input[name="targetActorUuid"]');
         uuidInput.value = uuid;
         uuidInput.dispatchEvent(new Event('change', { bubbles: true }));
-        ui.notifications.info(`Target set to: ${actor.name}`);
+        ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.TargetSet', { name: actor.name }));
       });
 
       // Award points
@@ -71,13 +71,13 @@ export class RNKReserves extends foundry.applications.api.HandlebarsApplicationM
         const pointsToAdd = parseInt(htmlElement_obj.querySelector('input[name="pointsToAdd"]').value) || 0;
 
         if (!uuid) {
-          return ui.notifications.error("No target actor UUID specified!");
+          return ui.notifications.error(game.i18n.localize('RNKRESERVES.Messages.NoTargetUuid'));
         }
 
         try {
           const actor = await fromUuid(uuid);
           if (!actor || actor.documentName !== "Actor") {
-            return ui.notifications.error("Invalid Actor UUID!");
+            return ui.notifications.error(game.i18n.localize('RNKRESERVES.Messages.InvalidActorUuid'));
           }
 
           const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
@@ -99,12 +99,17 @@ export class RNKReserves extends foundry.applications.api.HandlebarsApplicationM
           // Emit socket to sync
           emitSocketMessage('updateHeroPoints', {
             actorId: actor.id,
-            points: newPoints
+            points: newPoints,
+            userId: game.user.id
           });
           
-          ui.notifications.info(`Awarded ${pointsToAdd} Hero Points to ${actor.name}. Total: ${newPoints}`);
+          ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.Awarded', {
+            points: pointsToAdd,
+            name: actor.name,
+            total: newPoints
+          }));
         } catch (err) {
-          ui.notifications.error("Error retrieving actor from UUID.");
+          ui.notifications.error(game.i18n.localize('RNKRESERVES.Messages.ActorUpdateError'));
           console.error(err);
         }
       });

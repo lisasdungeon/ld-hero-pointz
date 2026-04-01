@@ -5,12 +5,20 @@
 import { getHeroPointsLog, getActorsSummary, clearHeroPointsLog, clearActorLog, reduceActorHeroPoints } from '../logger.js';
 
 export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
+  static _getDialogRoot(html) {
+    if (html instanceof HTMLElement) return html;
+    if (html?.[0] instanceof HTMLElement) return html[0];
+    if (html?.element instanceof HTMLElement) return html.element;
+    if (html?.element?.[0] instanceof HTMLElement) return html.element[0];
+    return null;
+  }
+
   static DEFAULT_OPTIONS = {
     id: 'rnk-reserves-log-viewer',
     tag: 'div',
     window: {
       icon: 'fas fa-book',
-      title: 'RNK Reserves - Activity Log',
+      title: 'RNK™ Reserves - Activity Log',
       resizable: true,
       minimizeable: true
     },
@@ -54,13 +62,13 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
       // Clear log button
       form.querySelector('.rnk-clear-all-log')?.addEventListener('click', async () => {
         const confirmed = await Dialog.confirm({
-          title: 'Clear All Logs?',
-          content: 'Are you sure you want to permanently delete all hero point activity logs and reset all actor hero points? This cannot be undone.'
+          title: game.i18n.localize('RNKRESERVES.Log.ClearAllConfirmTitle'),
+          content: game.i18n.localize('RNKRESERVES.Log.ClearAllConfirm')
         });
 
         if (confirmed) {
           await clearHeroPointsLog();
-          ui.notifications.info('All activity logs and hero points cleared.');
+          ui.notifications.info(game.i18n.localize('RNKRESERVES.Log.ClearAllSuccess'));
           this.render(true);
         }
       });
@@ -72,13 +80,13 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
           const actorName = event.currentTarget.dataset.actorName;
           
           const confirmed = await Dialog.confirm({
-            title: 'Clear Actor Log?',
-            content: `Clear all activity logs for ${actorName}? This cannot be undone.`
+            title: game.i18n.localize('RNKRESERVES.Log.ClearActorConfirmTitle'),
+            content: game.i18n.format('RNKRESERVES.Log.ClearActorConfirm', { actorName })
           });
 
           if (confirmed) {
             await clearActorLog(actorId);
-            ui.notifications.info(`Logs and hero points cleared for ${actorName}.`);
+            ui.notifications.info(game.i18n.format('RNKRESERVES.Log.ClearActorSuccess', { actorName }));
             this.render(true);
           }
         });
@@ -92,22 +100,30 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
           const currentPoints = parseInt(event.currentTarget.dataset.currentPoints) || 0;
           
           const dialog = new Dialog({
-            title: `Reduce Hero Points for ${actorName}`,
-            content: `<form><div class="form-group"><label>Current Points: ${currentPoints}</label></div><div class="form-group"><label>Reduce By:</label><input type="number" id="reduce-amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`,
+            title: game.i18n.format('RNKRESERVES.Log.ReduceTitle', { actorName }),
+            content: `<form><div class="form-group"><label>${game.i18n.format('RNKRESERVES.Log.CurrentPointsLabel', { points: currentPoints })}</label></div><div class="form-group"><label>${game.i18n.localize('RNKRESERVES.Log.ReduceBy')}</label><input type="number" id="reduce-amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`,
             buttons: {
               reduce: {
-                label: 'Reduce',
+                label: game.i18n.localize('RNKRESERVES.Log.ReduceButton'),
                 callback: async (html) => {
-                  const amount = parseInt((html[0] || html).querySelector('#reduce-amount').value) || 1;
+                  const dialogRoot = RNKReservesLogViewer._getDialogRoot(html);
+                  const amountInput = dialogRoot?.querySelector('#reduce-amount');
+                  const amount = Number.parseInt(amountInput?.value ?? '1', 10) || 1;
+
+                  if (!amountInput) {
+                    ui.notifications.error(game.i18n.localize('RNKRESERVES.Log.ReduceReadError'));
+                    return;
+                  }
+
                   if (amount > 0 && amount <= currentPoints) {
                     await reduceActorHeroPoints(actorId, amount);
-                    ui.notifications.info(`Reduced ${amount} hero point(s) for ${actorName}.`);
+                    ui.notifications.info(game.i18n.format('RNKRESERVES.Log.ReduceSuccess', { amount, actorName }));
                     this.render(true);
                   }
                 }
               },
               cancel: {
-                label: 'Cancel'
+                label: game.i18n.localize('RNKRESERVES.Log.CancelButton')
               }
             },
             default: 'reduce'

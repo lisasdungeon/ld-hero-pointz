@@ -1,21 +1,21 @@
 <form class="rnk-reserves-settings">
-  <h2>RNK Reserves - Hero Points Management</h2>
+  <h2>{{localize "RNKRESERVES.Menu.ManagementName"}}</h2>
   <div class="form-group">
-    <label>Target Actor UUID</label>
+    <label>{{localize "RNKRESERVES.Settings.TargetActorLabel"}}</label>
     <div class="form-fields">
-      <input type="text" name="targetActorUuid" value="{{targetActorUuid}}" placeholder="Actor.123abc...">
-      <button type="button" class="rnk-get-uuid" title="Get UUID from Selected Token">
+      <input type="text" name="targetActorUuid" value="{{targetActorUuid}}" placeholder="{{localize 'RNKRESERVES.Settings.TargetActorPlaceholder'}}">
+      <button type="button" class="rnk-get-uuid" title="{{localize 'RNKRESERVES.Settings.GetSelectedToken'}}">
         <i class="fas fa-crosshairs"></i>
       </button>
     </div>
-    <p class="notes">The UUID of the actor currently being managed.</p>
+    <p class="notes">{{localize "RNKRESERVES.Settings.TargetActorHint"}}</p>
   </div>
 
   <hr>
 
-  <h3>Add Points</h3>
+  <h3>{{localize "RNKRESERVES.Settings.SectionAdd"}}</h3>
   <div class="form-group">
-    <label>Points to Add</label>
+    <label>{{localize "RNKRESERVES.Settings.PointsToAdd"}}</label>
     <div class="form-fields">
       <input type="number" name="pointsToAdd" value="1" min="1" step="1">
     </div>
@@ -23,16 +23,16 @@
 
   <div class="form-group">
     <button type="button" class="rnk-award-points">
-      <i class="fas fa-plus"></i> Award Hero Points
+      <i class="fas fa-plus"></i> {{localize "RNKRESERVES.Settings.AwardButton"}}
     </button>
   </div>
 
   <hr>
 
-  <h3>Activity Log</h3>
+  <h3>{{localize "RNKRESERVES.Settings.SectionLog"}}</h3>
   <div class="form-group">
     <button type="button" class="rnk-open-log-viewer">
-      <i class="fas fa-book"></i> View Activity Log
+      <i class="fas fa-book"></i> {{localize "RNKRESERVES.Settings.ViewLogButton"}}
     </button>
   </div>
 </form>
