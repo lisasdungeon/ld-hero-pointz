@@ -1,6 +1,6 @@
 {
   "name": "rnk-reserves",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "description": "Premium D&D 2024 hero point management for Foundry VTT with GM controls and synchronized player spending.",
   "type": "module",
   "main": "src/main.js",

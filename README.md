@@ -5,7 +5,7 @@ Premium D&D 2024 hero point management for Foundry VTT with GM controls, synchro
 ## Module details
 
 - Version: `1.3.9`
-- Compatibility: Foundry VTT `13`
+- Compatibility: Foundry VTT `13+` (verified `14`)
 - Game System: D&D 5e / D&D 2024
 - Distribution: Premium Patreon-gated module
 - License: RNK Proprietary License

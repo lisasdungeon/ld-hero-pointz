@@ -35,8 +35,8 @@ if (moduleJson.protected !== false) {
   throw new Error('Patreon-gated premium modules must use protected: false.');
 }
 
-if (moduleJson.compatibility?.minimum !== 13 || moduleJson.compatibility?.verified !== 13) {
-  throw new Error('module.json compatibility must be numeric and pinned to Foundry 13.');
+if (moduleJson.compatibility?.minimum !== 13 || moduleJson.compatibility?.verified !== 14) {
+  throw new Error('module.json compatibility must be numeric and pinned to Foundry 13 minimum and verified 14.');
 }
 
 if (!Array.isArray(moduleJson.styles) || moduleJson.styles.length === 0) {

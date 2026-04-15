@@ -12,10 +12,10 @@
       "url": "https://github.com/RNK-Enterprise"
     }
   ],
-  "version": "1.3.9",
+  "version": "1.3.10",
   "compatibility": {
     "minimum": 13,
-    "verified": 13
+    "verified": 14
   },
   "url": "https://github.com/RNK-Enterprise/rnk-reserves",
   "manifest": "https://github.com/RNK-Enterprise/rnk-reserves/releases/latest/download/module.json",
