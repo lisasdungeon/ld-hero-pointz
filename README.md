@@ -4,7 +4,7 @@ Premium D&D 2024 hero point management for Foundry VTT with GM controls, synchro
 
 ## Module details
 
-- Version: `1.3.9`
+- Version: `1.3.11`
 - Compatibility: Foundry VTT `13+` (verified `14`)
 - Game System: D&D 5e / D&D 2024
 - Distribution: Premium Patreon-gated module
@@ -18,6 +18,7 @@ Premium D&D 2024 hero point management for Foundry VTT with GM controls, synchro
 - Socket-based synchronization across connected clients
 - Activity log viewer with export, actor filtering, log clearing, and point reduction
 - NPC support through explicit enable/disable actions
+- Uncapped hero point awards with level-up refreshes that never reduce an existing total
 
 ## Installation
 
@@ -56,3 +57,4 @@ https://github.com/RNK-Enterprise/rnk-reserves/releases/latest/download/module.j
 
 - Premium modules are Patreon-gated but not marked as protected in the manifest.
 - This repository is maintained as a standalone module.
+- Hero points are intentionally uncapped so GMs can adjust totals without hitting a hard ceiling.

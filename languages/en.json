@@ -69,7 +69,7 @@
   "RNKRESERVES.Chat.DeathSaveContent": "The failed death saving throw has been turned into a success.",
   "RNKRESERVES.Chat.DeathSaveFlavor": "Hero Point spent for death save success",
   "RNKRESERVES.Chat.DeathSaveSuccess": "Death saving throw turned into success.",
-  "RNKRESERVES.Messages.LeveledUp": "{name} reached level {level}. Hero points refreshed to {max}.",
+  "RNKRESERVES.Messages.LeveledUp": "{name} reached level {level}. Hero points refreshed to {points}.",
   "RNKRESERVES.Messages.GMOnlyEnableNPC": "Only the GM can enable NPC hero points.",
   "RNKRESERVES.Messages.GMOnlyDisableNPC": "Only the GM can disable NPC hero points.",
   "RNKRESERVES.Messages.ActorNotFound": "Actor not found: {actorId}",
@@ -84,9 +84,9 @@
   "RNKRESERVES.Messages.HeroPointsSet": "{name} hero points set to {points}.",
   "RNKRESERVES.Messages.LogResetFailed": "Failed to reset flags for {name}.",
   "RNKRESERVES.Messages.UnknownUser": "Unknown",
-  "RNKRESERVES.GM.Header": "Reserves: {current}/{max}",
+  "RNKRESERVES.GM.Header": "Reserves: {current}",
   "RNKRESERVES.GM.AwardTitle": "Grant 1 hero point",
   "RNKRESERVES.GM.SubtractTitle": "Remove 1 hero point",
-  "RNKRESERVES.GM.ResetTitle": "Refresh to level max",
+  "RNKRESERVES.GM.ResetTitle": "Refresh to level baseline",
   "RNKRESERVES.GM.SetZeroTitle": "Set to 0"
 }

@@ -79,6 +79,14 @@ function addHeroPointButtons(message, html, data) {
 }
 
 /**
+ * Get the current level-based hero point baseline.
+ * This is used as a refresh target, not a cap.
+ */
+function getHeroPointBaseline(level = 1) {
+  return 5 + Math.floor(level / 2);
+}
+
+/**
  * Handle Hero Point spending actions
  */
 async function handleHeroPointAction(actor, action, message) {
@@ -195,16 +203,18 @@ export function registerHooks() {
       const oldLevel = actor.system.details?.level || 1;
       if (newLevel > oldLevel) {
         // Character leveled up!
-        const newMax = 5 + Math.floor(newLevel / 2);
+        const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+        const baselinePoints = getHeroPointBaseline(newLevel);
+        const refreshedPoints = Math.max(currentPoints, baselinePoints);
         
-        // Unspent points are lost, set to new total
-        foundry.utils.setProperty(updateData, 'flags.rnk-reserves.heroPoints', newMax);
+        // Refresh up to the level baseline without removing any excess points.
+        foundry.utils.setProperty(updateData, 'flags.rnk-reserves.heroPoints', refreshedPoints);
         
         // Notify the user
         ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.LeveledUp', {
           name: actor.name,
           level: newLevel,
-          max: newMax
+          points: refreshedPoints
         }));
       }
     }
@@ -262,14 +272,14 @@ function addGMControls(sheet, html, data) {
 
   const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
   const level = actor.system.details?.level || 1;
-  const maxPoints = 5 + Math.floor(level / 2);
+  const baselinePoints = getHeroPointBaseline(level);
 
   // Create GM controls container
   const gmControls = document.createElement('div');
   gmControls.className = 'rnk-reserves-gm-controls';
   gmControls.innerHTML = `
     <div class="rnk-reserves-gm-header">
-      <span>${game.i18n.format('RNKRESERVES.GM.Header', { current: heroPoints, max: maxPoints })}</span>
+      <span>${game.i18n.format('RNKRESERVES.GM.Header', { current: heroPoints })}</span>
     </div>
     <div class="rnk-reserves-gm-actions">
       <button type="button" class="rnk-reserves-gm-btn" data-action="award" title="${game.i18n.localize('RNKRESERVES.GM.AwardTitle')}"><i class="fas fa-plus"></i></button>
@@ -292,7 +302,7 @@ function addGMControls(sheet, html, data) {
     if (!btn) return;
     const action = btn.dataset.action;
     if (action) {
-      await handleGMAction(actor, action, heroPoints, maxPoints);
+      await handleGMAction(actor, action, heroPoints, baselinePoints);
     }
   });
 }
@@ -300,18 +310,19 @@ function addGMControls(sheet, html, data) {
 /**
  * Handle GM actions for awarding/resetting Hero Points
  */
-async function handleGMAction(actor, action, currentPoints, maxPoints) {
+async function handleGMAction(actor, action, currentPoints, baselinePoints) {
   let newPoints = currentPoints;
 
   switch (action) {
     case 'award':
-      newPoints = Math.min(currentPoints + 1, maxPoints);
+      newPoints = currentPoints + 1;
       break;
     case 'subtract':
       newPoints = Math.max(currentPoints - 1, 0);
       break;
     case 'reset':
-      newPoints = maxPoints;
+      // Refresh up to the level baseline without removing excess points.
+      newPoints = Math.max(currentPoints, baselinePoints);
       break;
     case 'set-zero':
       newPoints = 0;

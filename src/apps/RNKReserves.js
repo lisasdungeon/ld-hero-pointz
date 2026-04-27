@@ -81,9 +81,7 @@ export class RNKReserves extends foundry.applications.api.HandlebarsApplicationM
           }
 
           const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
-          const level = actor.system.details?.level || 1;
-          const maxPoints = 5 + Math.floor(level / 2);
-          const newPoints = Math.min(currentPoints + pointsToAdd, maxPoints);
+          const newPoints = currentPoints + pointsToAdd;
 
           await actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
           
