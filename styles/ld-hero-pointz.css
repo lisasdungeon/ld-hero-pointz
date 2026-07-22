@@ -1,0 +1,122 @@
+/* LD Hero Pointz Styles */
+
+.ld-hero-pointz-reserves-buttons {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.ld-hero-pointz-reserves-header {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #8b4513;
+}
+
+.ld-hero-pointz-reserves-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.ld-hero-pointz-reserves-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #8b4513;
+  background: #f4e4bc;
+  color: #8b4513;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ld-hero-pointz-reserves-btn:hover {
+  background: #e6d4a8;
+}
+
+.ld-hero-pointz-reserves-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* GM Controls */
+.ld-hero-pointz-reserves-gm-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.ld-hero-pointz-reserves-gm-header {
+  font-weight: bold;
+  color: #8b4513;
+  font-size: 14px;
+}
+
+.ld-hero-pointz-reserves-gm-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.ld-hero-pointz-reserves-gm-btn {
+  padding: 2px 6px;
+  font-size: 11px;
+  border: 1px solid #8b4513;
+  background: #f4e4bc;
+  color: #8b4513;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ld-hero-pointz-reserves-gm-btn:hover {
+  background: #e6d4a8;
+}
+
+.ld-hero-pointz-reserves-gm-btn.active {
+  background: #8b4513;
+  color: #f4e4bc;
+}
+
+/* Settings Menu Styles */
+.ld-hero-pointz-reserves-settings {
+  padding: 10px;
+}
+
+.ld-hero-pointz-reserves-settings h2 {
+  border-bottom: 2px solid #8b4513;
+  padding-bottom: 5px;
+  color: #8b4513;
+}
+
+.ld-hero-pointz-reserves-settings .form-group {
+  margin: 15px 0;
+}
+
+.ld-hero-pointz-reserves-settings .form-fields {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.ld-hero-pointz-reserves-settings .ld-hero-pointz-get-uuid {
+  max-width: 40px;
+  flex: 0 0 40px;
+}
+
+.ld-hero-pointz-reserves-settings .ld-hero-pointz-award-points {
+  width: 100%;
+  padding: 8px;
+  font-weight: bold;
+  background: #f4e4bc;
+  border: 2px solid #8b4513;
+  color: #8b4513;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ld-hero-pointz-reserves-settings .ld-hero-pointz-award-points:hover {
+  background: #e6d4a8;
+}

@@ -8,7 +8,7 @@ const moduleZip = path.join(root, 'module.zip');
 const zipsDir = path.join(root, 'zips');
 
 const moduleJson = JSON.parse(readFileSync(path.join(root, 'module.json'), 'utf8'));
-const versionedZip = path.join(zipsDir, `rnk-reserves-v${moduleJson.version}.zip`);
+const versionedZip = path.join(zipsDir, `ld-hero-pointz-v${moduleJson.version}.zip`);
 
 rmSync(tempDir, { recursive: true, force: true });
 mkdirSync(tempDir, { recursive: true });

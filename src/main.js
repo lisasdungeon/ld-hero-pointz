@@ -3,14 +3,14 @@
  * Main entry point for the module
  */
 
-import { RNKReserves } from './apps/RNKReserves.js';
+import { LdHeroPointz } from './apps/LdHeroPointz.js';
 import { registerSettings } from './settings.js';
 import { registerHooks } from './hooks.js';
 import { registerSocket } from './socket.js';
 import { initializeLogger } from './logger.js';
 
-class RNKReservesModule {
-  static ID = 'rnk-reserves';
+class LdHeroPointzModule {
+  static ID = 'ld-hero-pointz';
 
   static init() {
     // Register settings
@@ -29,28 +29,28 @@ class RNKReservesModule {
 
   /**
    * Enable Hero Points on a specific NPC by actor ID.
-   * Usage (console or macro): RNKReserves.enableNPC("actorId", 3)
+   * Usage (console or macro): LdHeroPointz.enableNPC("actorId", 3)
    * @param {string} actorId - The actor's ID
    * @param {number} [points=1] - Number of Hero Points to assign
    */
   static async enableNPC(actorId, points = 1) {
     if (!game.user.isGM) {
-      ui.notifications.warn(game.i18n.localize('RNKRESERVES.Messages.GMOnlyEnableNPC'));
+      ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Messages.GMOnlyEnableNPC'));
       return;
     }
 
     const actor = game.actors.get(actorId);
     if (!actor) {
-      ui.notifications.error(game.i18n.format('RNKRESERVES.Messages.ActorNotFound', { actorId }));
+      ui.notifications.error(game.i18n.format('LDHEROEPOINTZ.Messages.ActorNotFound', { actorId }));
       return;
     }
 
     const clamped = Math.max(points, 0);
 
-    await actor.setFlag('rnk-reserves', 'heroPointsEnabled', true);
-    await actor.setFlag('rnk-reserves', 'heroPoints', clamped);
+    await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', true);
+    await actor.setFlag('ld-hero-pointz', 'heroPoints', clamped);
 
-    ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.NpcEnabled', {
+    ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.NpcEnabled', {
       name: actor.name,
       type: actor.type,
       points: clamped
@@ -59,31 +59,31 @@ class RNKReservesModule {
 
   /**
    * Disable Hero Points on a specific NPC by actor ID.
-   * Usage (console or macro): RNKReserves.disableNPC("actorId")
+   * Usage (console or macro): LdHeroPointz.disableNPC("actorId")
    * @param {string} actorId - The actor's ID
    */
   static async disableNPC(actorId) {
     if (!game.user.isGM) {
-      ui.notifications.warn(game.i18n.localize('RNKRESERVES.Messages.GMOnlyDisableNPC'));
+      ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Messages.GMOnlyDisableNPC'));
       return;
     }
 
     const actor = game.actors.get(actorId);
     if (!actor) {
-      ui.notifications.error(game.i18n.format('RNKRESERVES.Messages.ActorNotFound', { actorId }));
+      ui.notifications.error(game.i18n.format('LDHEROEPOINTZ.Messages.ActorNotFound', { actorId }));
       return;
     }
 
-    await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
-    await actor.setFlag('rnk-reserves', 'heroPoints', 0);
+    await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', false);
+    await actor.setFlag('ld-hero-pointz', 'heroPoints', 0);
 
-    ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.NpcDisabled', { name: actor.name }));
+    ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.NpcDisabled', { name: actor.name }));
   }
 }
 
 // Initialize on Foundry ready
-Hooks.once('init', RNKReservesModule.init);
-Hooks.once('ready', RNKReservesModule.ready);
+Hooks.once('init', LdHeroPointzModule.init);
+Hooks.once('ready', LdHeroPointzModule.ready);
 
 // Export for global access
-window.RNKReserves = RNKReservesModule;
+window.LdHeroPointz = LdHeroPointzModule;

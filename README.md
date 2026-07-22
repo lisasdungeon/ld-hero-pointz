@@ -1,6 +1,6 @@
-# RNK™ Reserves
+# LD Hero Pointz
 
-Premium D&D 2024 hero point management for Foundry VTT with GM controls, synchronized player spending, and activity logging.
+D&D 5e hero point management for Foundry VTT with GM controls, synchronized player spending, and activity logging.
 
 ## Module details
 
@@ -8,7 +8,7 @@ Premium D&D 2024 hero point management for Foundry VTT with GM controls, synchro
 - Compatibility: Foundry VTT `13+` (verified `14`)
 - Game System: D&D 5e / D&D 2024
 - Distribution: Premium Patreon-gated module
-- License: RNK Proprietary License
+- License: Lisa's Dungeon Proprietary License
 
 ## Features
 
@@ -27,7 +27,7 @@ This is a premium Patreon-gated module.
 Manifest URL:
 
 ```text
-https://github.com/RNK-Enterprise/rnk-reserves/releases/latest/download/module.json
+https://github.com/lisasdungeon/ld-hero-pointz/releases/latest/download/module.json
 ```
 
 ## Usage
@@ -50,8 +50,8 @@ https://github.com/RNK-Enterprise/rnk-reserves/releases/latest/download/module.j
 
 ## Support
 
-- Patreon: https://www.patreon.com/RagNaroks
-- Issues: https://github.com/RNK-Enterprise/rnk-reserves/issues
+- Patreon: https://patreon.com/LisasDungeon
+- Issues: https://github.com/lisasdungeon/ld-hero-pointz/issues
 
 ## Notes
 

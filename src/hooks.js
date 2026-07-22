@@ -28,9 +28,9 @@ function addHeroPointButtons(message, html, data) {
   if (!actor) return;
 
   // Skip NPCs unless explicitly enabled
-  if (actor.type === 'npc' && !actor.getFlag('rnk-reserves', 'heroPointsEnabled')) return;
+  if (actor.type === 'npc' && !actor.getFlag('ld-hero-pointz', 'heroPointsEnabled')) return;
 
-  const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   if (heroPoints <= 0) return;
 
   // Determine if this is a d20 roll or a death save
@@ -43,20 +43,20 @@ function addHeroPointButtons(message, html, data) {
 
   // Create button container
   const buttonContainer = document.createElement('div');
-  buttonContainer.className = 'rnk-reserves-buttons';
+  buttonContainer.className = 'ld-hero-pointz-buttons';
   
   let actionsHtml = '';
   if (isDeathSave) {
-    actionsHtml = `<button class="rnk-reserves-btn" data-action="deathSuccess">${game.i18n.localize('RNKRESERVES.Chat.DeathSuccess')}</button>`;
+    actionsHtml = `<button class="ld-hero-pointz-btn" data-action="deathSuccess">${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSuccess')}</button>`;
   } else if (isD20) {
-    actionsHtml = `<button class="rnk-reserves-btn" data-action="addD6">${game.i18n.localize('RNKRESERVES.Chat.AddD6')}</button>`;
+    actionsHtml = `<button class="ld-hero-pointz-btn" data-action="addD6">${game.i18n.localize('LDHEROEPOINTZ.Chat.AddD6')}</button>`;
   }
 
   buttonContainer.innerHTML = `
-    <div class="rnk-reserves-header">
-      <span>${game.i18n.format('RNKRESERVES.Chat.HeroPoints', { points: heroPoints })}</span>
+    <div class="ld-hero-pointz-header">
+      <span>${game.i18n.format('LDHEROEPOINTZ.Chat.HeroPoints', { points: heroPoints })}</span>
     </div>
-    <div class="rnk-reserves-actions">
+    <div class="ld-hero-pointz-actions">
       ${actionsHtml}
     </div>
   `;
@@ -90,19 +90,19 @@ function getHeroPointBaseline(level = 1) {
  * Handle Hero Point spending actions
  */
 async function handleHeroPointAction(actor, action, message) {
-  const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   if (heroPoints <= 0) {
-    ui.notifications.warn(game.i18n.localize('RNKRESERVES.Chat.NoPoints'));
+    ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Chat.NoPoints'));
     return;
   }
 
   // Confirm spending
   const content = action === 'deathSuccess' 
-    ? game.i18n.localize('RNKRESERVES.Chat.SpendDeathSave')
-    : game.i18n.localize('RNKRESERVES.Chat.SpendAddD6');
+    ? game.i18n.localize('LDHEROEPOINTZ.Chat.SpendDeathSave')
+    : game.i18n.localize('LDHEROEPOINTZ.Chat.SpendAddD6');
     
   const confirmed = await Dialog.confirm({
-    title: game.i18n.localize('RNKRESERVES.Chat.SpendTitle'),
+    title: game.i18n.localize('LDHEROEPOINTZ.Chat.SpendTitle'),
     content: content
   });
 
@@ -110,7 +110,7 @@ async function handleHeroPointAction(actor, action, message) {
 
   // Spend the point
   const newPoints = heroPoints - 1;
-  await actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Log the spending (local client can still log if GM)
   if (game.user.isGM) {
@@ -149,14 +149,14 @@ async function handleHeroPointAction(actor, action, message) {
 async function handleAddD6(message, actor) {
   const bonusRoll = await new Roll('1d6').evaluate();
   const totalBonus = bonusRoll.total;
-  const flavor = message.flavor || game.i18n.localize('RNKRESERVES.Chat.RollDefaultFlavor');
+  const flavor = message.flavor || game.i18n.localize('LDHEROEPOINTZ.Chat.RollDefaultFlavor');
 
   await bonusRoll.toMessage({
     speaker: ChatMessage.getSpeaker({actor}),
-    flavor: game.i18n.format('RNKRESERVES.Chat.AddD6Flavor', { flavor })
+    flavor: game.i18n.format('LDHEROEPOINTZ.Chat.AddD6Flavor', { flavor })
   });
 
-  ui.notifications.info(game.i18n.format('RNKRESERVES.Chat.AddD6Success', { bonus: totalBonus }));
+  ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Chat.AddD6Success', { bonus: totalBonus }));
 }
 
 /**
@@ -165,12 +165,12 @@ async function handleAddD6(message, actor) {
 async function handleDeathSaveSuccess(message, actor) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({actor}),
-    content: `<div class="dnd5e chat-card"><header class="card-header"><h3>${game.i18n.localize('RNKRESERVES.Chat.DeathSaveTitle')}</h3></header>
-              <div class="card-content">${game.i18n.localize('RNKRESERVES.Chat.DeathSaveContent')}</div></div>`,
-    flavor: game.i18n.localize('RNKRESERVES.Chat.DeathSaveFlavor')
+    content: `<div class="dnd5e chat-card"><header class="card-header"><h3>${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveTitle')}</h3></header>
+              <div class="card-content">${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveContent')}</div></div>`,
+    flavor: game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveFlavor')
   });
   
-  ui.notifications.info(game.i18n.localize('RNKRESERVES.Chat.DeathSaveSuccess'));
+  ui.notifications.info(game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveSuccess'));
 }
 
 
@@ -187,7 +187,7 @@ export function registerHooks() {
       // Verify the user is the owner/controller of this actor
       if (!actor.isOwner) return;
 
-      const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+      const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
       if (heroPoints <= 0) return;
     }
     addHeroPointButtons(message, html, data);
@@ -196,22 +196,22 @@ export function registerHooks() {
   // Level-up detection and refresh
   Hooks.on('preUpdateActor', (actor, updateData, options, userId) => {
     // Respect the autoAward setting
-    if (!game.settings.get('rnk-reserves', 'autoAward')) return;
+    if (!game.settings.get('ld-hero-pointz', 'autoAward')) return;
 
     const newLevel = foundry.utils.getProperty(updateData, 'system.details.level');
     if (newLevel !== undefined) {
       const oldLevel = actor.system.details?.level || 1;
       if (newLevel > oldLevel) {
         // Character leveled up!
-        const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+        const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
         const baselinePoints = getHeroPointBaseline(newLevel);
         const refreshedPoints = Math.max(currentPoints, baselinePoints);
         
         // Refresh up to the level baseline without removing any excess points.
-        foundry.utils.setProperty(updateData, 'flags.rnk-reserves.heroPoints', refreshedPoints);
+        foundry.utils.setProperty(updateData, 'flags.ld-hero-pointz.heroPoints', refreshedPoints);
         
         // Notify the user
-        ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.LeveledUp', {
+        ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.LeveledUp', {
           name: actor.name,
           level: newLevel,
           points: refreshedPoints
@@ -236,8 +236,8 @@ export function registerHooks() {
 
   // Sync Hero Points when actor updates
   Hooks.on('updateActor', (actor, data, options, userId) => {
-    if (foundry.utils.hasProperty(data, 'flags.rnk-reserves.heroPoints')) {
-      const points = foundry.utils.getProperty(data, 'flags.rnk-reserves.heroPoints');
+    if (foundry.utils.hasProperty(data, 'flags.ld-hero-pointz.heroPoints')) {
+      const points = foundry.utils.getProperty(data, 'flags.ld-hero-pointz.heroPoints');
       console.log(`RNK™ Reserves | Actor ${actor.name} Hero Points updated to: ${points}`);
     }
   });
@@ -251,13 +251,13 @@ function initializeHeroPoints(actor) {
   if (actor.type === 'npc') return;
 
   // Respect the autoAward setting
-  if (!game.settings.get('rnk-reserves', 'autoAward')) return;
+  if (!game.settings.get('ld-hero-pointz', 'autoAward')) return;
 
-  const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints');
+  const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints');
   if (currentPoints === undefined) {
     const level = actor.system.details?.level || 1;
     const initialPoints = 5 + Math.floor(level / 2);
-    actor.setFlag('rnk-reserves', 'heroPoints', initialPoints);
+    actor.setFlag('ld-hero-pointz', 'heroPoints', initialPoints);
   }
 }
 
@@ -268,24 +268,24 @@ function addGMControls(sheet, html, data) {
   const actor = sheet.actor;
 
   // Skip NPCs unless explicitly enabled
-  if (actor.type === 'npc' && !actor.getFlag('rnk-reserves', 'heroPointsEnabled')) return;
+  if (actor.type === 'npc' && !actor.getFlag('ld-hero-pointz', 'heroPointsEnabled')) return;
 
-  const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const level = actor.system.details?.level || 1;
   const baselinePoints = getHeroPointBaseline(level);
 
   // Create GM controls container
   const gmControls = document.createElement('div');
-  gmControls.className = 'rnk-reserves-gm-controls';
+  gmControls.className = 'ld-hero-pointz-gm-controls';
   gmControls.innerHTML = `
-    <div class="rnk-reserves-gm-header">
-      <span>${game.i18n.format('RNKRESERVES.GM.Header', { current: heroPoints })}</span>
+    <div class="ld-hero-pointz-gm-header">
+      <span>${game.i18n.format('LDHEROEPOINTZ.GM.Header', { current: heroPoints })}</span>
     </div>
-    <div class="rnk-reserves-gm-actions">
-      <button type="button" class="rnk-reserves-gm-btn" data-action="award" title="${game.i18n.localize('RNKRESERVES.GM.AwardTitle')}"><i class="fas fa-plus"></i></button>
-      <button type="button" class="rnk-reserves-gm-btn" data-action="subtract" title="${game.i18n.localize('RNKRESERVES.GM.SubtractTitle')}"><i class="fas fa-minus"></i></button>
-      <button type="button" class="rnk-reserves-gm-btn" data-action="reset" title="${game.i18n.localize('RNKRESERVES.GM.ResetTitle')}"><i class="fas fa-sync"></i></button>
-      <button type="button" class="rnk-reserves-gm-btn" data-action="set-zero" title="${game.i18n.localize('RNKRESERVES.GM.SetZeroTitle')}"><i class="fas fa-times"></i></button>
+    <div class="ld-hero-pointz-gm-actions">
+      <button type="button" class="ld-hero-pointz-gm-btn" data-action="award" title="${game.i18n.localize('LDHEROEPOINTZ.GM.AwardTitle')}"><i class="fas fa-plus"></i></button>
+      <button type="button" class="ld-hero-pointz-gm-btn" data-action="subtract" title="${game.i18n.localize('LDHEROEPOINTZ.GM.SubtractTitle')}"><i class="fas fa-minus"></i></button>
+      <button type="button" class="ld-hero-pointz-gm-btn" data-action="reset" title="${game.i18n.localize('LDHEROEPOINTZ.GM.ResetTitle')}"><i class="fas fa-sync"></i></button>
+      <button type="button" class="ld-hero-pointz-gm-btn" data-action="set-zero" title="${game.i18n.localize('LDHEROEPOINTZ.GM.SetZeroTitle')}"><i class="fas fa-times"></i></button>
     </div>
   `;
 
@@ -331,7 +331,7 @@ async function handleGMAction(actor, action, currentPoints, baselinePoints) {
       return;
   }
 
-  await actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Emit socket to sync
   emitSocketMessage('updateHeroPoints', {
@@ -340,7 +340,7 @@ async function handleGMAction(actor, action, currentPoints, baselinePoints) {
     userId: game.user.id
   });
 
-  ui.notifications.info(game.i18n.format('RNKRESERVES.Messages.HeroPointsSet', {
+  ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.HeroPointsSet', {
     name: actor.name,
     points: newPoints
   }));

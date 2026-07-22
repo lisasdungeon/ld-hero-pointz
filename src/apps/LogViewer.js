@@ -1,10 +1,10 @@
 /**
- * RNK Reserves Log Viewer Application
+ * LD Hero Pointz Log Viewer Application
  * Displays hero point spending history to the GM
  */
 import { getHeroPointsLog, getActorsSummary, clearHeroPointsLog, clearActorLog, reduceActorHeroPoints } from '../logger.js';
 
-export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
+export class LdHeroPointzLogViewer extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
   static _getDialogRoot(html) {
     if (html instanceof HTMLElement) return html;
     if (html?.[0] instanceof HTMLElement) return html[0];
@@ -14,11 +14,11 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
   }
 
   static DEFAULT_OPTIONS = {
-    id: 'rnk-reserves-log-viewer',
+    id: 'ld-hero-pointz-log-viewer',
     tag: 'div',
     window: {
       icon: 'fas fa-book',
-      title: 'RNK™ Reserves - Activity Log',
+      title: 'LD Hero Pointz - Activity Log',
       resizable: true,
       minimizeable: true
     },
@@ -30,7 +30,7 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
 
   static PARTS = {
     main: {
-      template: 'modules/rnk-reserves/templates/log-viewer.hbs'
+      template: 'modules/ld-hero-pointz/templates/log-viewer.hbs'
     }
   };
 
@@ -52,78 +52,78 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
 
     if (partId === 'main') {
       const htmlEl = htmlElement instanceof HTMLElement ? htmlElement : htmlElement[0];
-      const form = htmlEl.querySelector('.rnk-log-viewer') || htmlEl;
+      const form = htmlEl.querySelector('.ld-hero-pointz-log-viewer') || htmlEl;
 
       // Export button
-      form.querySelector('.rnk-export-log')?.addEventListener('click', () => {
+      form.querySelector('.ld-hero-pointz-export-log')?.addEventListener('click', () => {
         this._exportLog();
       });
 
       // Clear log button
-      form.querySelector('.rnk-clear-all-log')?.addEventListener('click', async () => {
+      form.querySelector('.ld-hero-pointz-clear-all-log')?.addEventListener('click', async () => {
         const confirmed = await Dialog.confirm({
-          title: game.i18n.localize('RNKRESERVES.Log.ClearAllConfirmTitle'),
-          content: game.i18n.localize('RNKRESERVES.Log.ClearAllConfirm')
+          title: game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllConfirmTitle'),
+          content: game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllConfirm')
         });
 
         if (confirmed) {
           await clearHeroPointsLog();
-          ui.notifications.info(game.i18n.localize('RNKRESERVES.Log.ClearAllSuccess'));
+          ui.notifications.info(game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllSuccess'));
           this.render(true);
         }
       });
 
       // Clear actor log buttons
-      form.querySelectorAll('.rnk-clear-actor-log').forEach(btn => {
+      form.querySelectorAll('.ld-hero-pointz-clear-actor-log').forEach(btn => {
         btn.addEventListener('click', async (event) => {
           const actorId = event.currentTarget.dataset.actorId;
           const actorName = event.currentTarget.dataset.actorName;
           
           const confirmed = await Dialog.confirm({
-            title: game.i18n.localize('RNKRESERVES.Log.ClearActorConfirmTitle'),
-            content: game.i18n.format('RNKRESERVES.Log.ClearActorConfirm', { actorName })
+            title: game.i18n.localize('LDHEROEPOINTZ.Log.ClearActorConfirmTitle'),
+            content: game.i18n.format('LDHEROEPOINTZ.Log.ClearActorConfirm', { actorName })
           });
 
           if (confirmed) {
             await clearActorLog(actorId);
-            ui.notifications.info(game.i18n.format('RNKRESERVES.Log.ClearActorSuccess', { actorName }));
+            ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Log.ClearActorSuccess', { actorName }));
             this.render(true);
           }
         });
       });
 
       // Reduce actor hero points buttons
-      form.querySelectorAll('.rnk-reduce-actor-points').forEach(btn => {
+      form.querySelectorAll('.ld-hero-pointz-reduce-actor-points').forEach(btn => {
         btn.addEventListener('click', async (event) => {
           const actorId = event.currentTarget.dataset.actorId;
           const actorName = event.currentTarget.dataset.actorName;
           const currentPoints = parseInt(event.currentTarget.dataset.currentPoints) || 0;
           
           const dialog = new Dialog({
-            title: game.i18n.format('RNKRESERVES.Log.ReduceTitle', { actorName }),
-            content: `<form><div class="form-group"><label>${game.i18n.format('RNKRESERVES.Log.CurrentPointsLabel', { points: currentPoints })}</label></div><div class="form-group"><label>${game.i18n.localize('RNKRESERVES.Log.ReduceBy')}</label><input type="number" id="reduce-amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`,
+            title: game.i18n.format('LDHEROEPOINTZ.Log.ReduceTitle', { actorName }),
+            content: `<form><div class="form-group"><label>${game.i18n.format('LDHEROEPOINTZ.Log.CurrentPointsLabel', { points: currentPoints })}</label></div><div class="form-group"><label>${game.i18n.localize('LDHEROEPOINTZ.Log.ReduceBy')}</label><input type="number" id="reduce-amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`,
             buttons: {
               reduce: {
-                label: game.i18n.localize('RNKRESERVES.Log.ReduceButton'),
+                label: game.i18n.localize('LDHEROEPOINTZ.Log.ReduceButton'),
                 callback: async (html) => {
-                  const dialogRoot = RNKReservesLogViewer._getDialogRoot(html);
+                  const dialogRoot = LdHeroPointzLogViewer._getDialogRoot(html);
                   const amountInput = dialogRoot?.querySelector('#reduce-amount');
                   const amount = Number.parseInt(amountInput?.value ?? '1', 10) || 1;
 
                   if (!amountInput) {
-                    ui.notifications.error(game.i18n.localize('RNKRESERVES.Log.ReduceReadError'));
+                    ui.notifications.error(game.i18n.localize('LDHEROEPOINTZ.Log.ReduceReadError'));
                     return;
                   }
 
                   if (amount > 0 && amount <= currentPoints) {
                     await reduceActorHeroPoints(actorId, amount);
-                    ui.notifications.info(game.i18n.format('RNKRESERVES.Log.ReduceSuccess', { amount, actorName }));
+                    ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Log.ReduceSuccess', { amount, actorName }));
                     this.render(true);
                   }
                 }
               },
               cancel: {
-                label: game.i18n.localize('RNKRESERVES.Log.CancelButton')
+                label: game.i18n.localize('LDHEROEPOINTZ.Log.CancelButton')
               }
             },
             default: 'reduce'
@@ -133,7 +133,7 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
       });
 
       // Filter by actor
-      form.querySelector('.rnk-filter-actor')?.addEventListener('change', (event) => {
+      form.querySelector('.ld-hero-pointz-filter-actor')?.addEventListener('change', (event) => {
         const actorId = event.target.value;
         const entries = form.querySelectorAll('[data-actor-id]');
         
@@ -163,7 +163,7 @@ export class RNKReservesLogViewer extends foundry.applications.api.HandlebarsApp
     
     const link = document.createElement('a');
     link.setAttribute('href', dataUri);
-    link.setAttribute('download', `rnk-reserves-log-${new Date().toISOString().split('T')[0]}.json`);
+    link.setAttribute('download', `ld-hero-pointz-log-${new Date().toISOString().split('T')[0]}.json`);
     link.click();
   }
 }

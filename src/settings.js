@@ -1,32 +1,32 @@
 /**
- * Settings registration for RNK Reserves
+ * Settings registration for LD Hero Pointz
  */
-import { RNKReserves } from './apps/RNKReserves.js';
-import { RNKReservesLogViewer } from './apps/LogViewer.js';
+import { LdHeroPointz } from './apps/LdHeroPointz.js';
+import { LdHeroPointzLogViewer } from './apps/LogViewer.js';
 
 export function registerSettings() {
   // Register the Settings Menu
-  game.settings.registerMenu('rnk-reserves', 'reservesMenu', {
-    name: 'RNKRESERVES.Menu.ManagementName',
-    label: 'RNKRESERVES.Menu.ManagementLabel',
-    hint: 'RNKRESERVES.Menu.ManagementHint',
+  game.settings.registerMenu('ld-hero-pointz', 'reservesMenu', {
+    name: 'LDHEROEPOINTZ.Menu.ManagementName',
+    label: 'LDHEROEPOINTZ.Menu.ManagementLabel',
+    hint: 'LDHEROEPOINTZ.Menu.ManagementHint',
     icon: 'fas fa-shield-alt',
-    type: RNKReserves,
+    type: LdHeroPointz,
     restricted: true
   });
 
   // Register the Log Viewer Menu
-  game.settings.registerMenu('rnk-reserves', 'logViewerMenu', {
-    name: 'RNKRESERVES.Menu.LogName',
-    label: 'RNKRESERVES.Menu.LogLabel',
-    hint: 'RNKRESERVES.Menu.LogHint',
+  game.settings.registerMenu('ld-hero-pointz', 'logViewerMenu', {
+    name: 'LDHEROEPOINTZ.Menu.LogName',
+    label: 'LDHEROEPOINTZ.Menu.LogLabel',
+    hint: 'LDHEROEPOINTZ.Menu.LogHint',
     icon: 'fas fa-book',
-    type: RNKReservesLogViewer,
+    type: LdHeroPointzLogViewer,
     restricted: true
   });
 
   // Target Actor UUID for point management
-  game.settings.register('rnk-reserves', 'targetActorUuid', {
+  game.settings.register('ld-hero-pointz', 'targetActorUuid', {
     scope: 'world',
     config: false,
     type: String,
@@ -34,9 +34,9 @@ export function registerSettings() {
   });
 
   // Auto-award at session start
-  game.settings.register('rnk-reserves', 'autoAward', {
-    name: 'RNKRESERVES.Settings.AutoAwardName',
-    hint: 'RNKRESERVES.Settings.AutoAwardHint',
+  game.settings.register('ld-hero-pointz', 'autoAward', {
+    name: 'LDHEROEPOINTZ.Settings.AutoAwardName',
+    hint: 'LDHEROEPOINTZ.Settings.AutoAwardHint',
     scope: 'world',
     config: true,
     type: Boolean,
@@ -44,7 +44,7 @@ export function registerSettings() {
   });
 
   // Hero Points Activity Log (hidden setting for storing log data)
-  game.settings.register('rnk-reserves', 'heroPointsLog', {
+  game.settings.register('ld-hero-pointz', 'heroPointsLog', {
     scope: 'world',
     config: false,
     type: Array,

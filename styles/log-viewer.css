@@ -1,12 +1,12 @@
-/* RNK Reserves Log Viewer Styles */
+/* LD Hero Pointz Log Viewer Styles */
 
-.rnk-log-viewer-container {
+.ld-hero-pointz-log-viewer-container {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.rnk-log-viewer {
+.ld-hero-pointz-log-viewer {
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -46,15 +46,15 @@
   background: rgba(0,0,0,0.3);
 }
 
-.rnk-summary-table,
-.rnk-log-table {
+.ld-hero-pointz-summary-table,
+.ld-hero-pointz-log-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
 
-.rnk-summary-table thead,
-.rnk-log-table thead {
+.ld-hero-pointz-summary-table thead,
+.ld-hero-pointz-log-table thead {
   background: #333;
   color: #fb0;
   font-weight: bold;
@@ -62,21 +62,21 @@
   top: 0;
 }
 
-.rnk-summary-table th,
-.rnk-log-table th {
+.ld-hero-pointz-summary-table th,
+.ld-hero-pointz-log-table th {
   padding: 0.5rem;
   text-align: left;
   border-bottom: 2px solid #555;
 }
 
-.rnk-summary-table td,
-.rnk-log-table td {
+.ld-hero-pointz-summary-table td,
+.ld-hero-pointz-log-table td {
   padding: 0.5rem;
   border-bottom: 1px solid #444;
 }
 
-.rnk-summary-table tbody tr:hover,
-.rnk-log-table tbody tr:hover {
+.ld-hero-pointz-summary-table tbody tr:hover,
+.ld-hero-pointz-log-table tbody tr:hover {
   background: rgba(255,255,255,0.05);
 }
 
@@ -94,7 +94,7 @@
   font-style: italic;
 }
 
-.rnk-clear-actor-log {
+.ld-hero-pointz-clear-actor-log {
   background: #8b0000;
   color: #fff;
   border: none;
@@ -104,7 +104,7 @@
   font-size: 0.8rem;
 }
 
-.rnk-clear-actor-log:hover {
+.ld-hero-pointz-clear-actor-log:hover {
   background: #b30000;
 }
 

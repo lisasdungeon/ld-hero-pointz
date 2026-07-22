@@ -8,9 +8,9 @@ const requiredFiles = [
   'README.md',
   'CHANGELOG.md',
   'src/main.js',
-  'src/apps/RNKReserves.js',
+  'src/apps/LdHeroPointz.js',
   'src/apps/LogViewer.js',
-  'styles/rnk-reserves.css',
+  'styles/ld-hero-pointz.css',
   'styles/log-viewer.css',
   'templates/settings.html',
   'templates/log-viewer.hbs',
@@ -57,4 +57,4 @@ for (const relativePath of ['README.md', 'CHANGELOG.md']) {
   }
 }
 
-console.log('rnk-reserves validation passed');
+console.log('ld-hero-pointz validation passed');

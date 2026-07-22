@@ -3,7 +3,7 @@
  * Tracks all hero point spending and updates
  */
 
-const LOG_STORAGE_KEY = 'rnk-reserves-log';
+const LOG_STORAGE_KEY = 'ld-hero-pointz-log';
 const MAX_LOG_ENTRIES = 500;
 
 /**
@@ -13,8 +13,8 @@ export function initializeLogger() {
   if (!game.user.isGM) return;
   
   // Create game world flag if it doesn't exist
-  if (!game.settings.get('rnk-reserves', 'heroPointsLog')) {
-    game.settings.set('rnk-reserves', 'heroPointsLog', []);
+  if (!game.settings.get('ld-hero-pointz', 'heroPointsLog')) {
+    game.settings.set('ld-hero-pointz', 'heroPointsLog', []);
   }
 }
 
@@ -40,15 +40,15 @@ export function logHeroPointSpending(actorId, actorName, pointsSpent, pointsRema
     pointsRemaining: pointsRemaining,
     action: action,
     userId: userId || game.user.id,
-    userName: (game.users.get(userId || game.user.id))?.name || game.i18n.localize('RNKRESERVES.Messages.UnknownUser')
+    userName: (game.users.get(userId || game.user.id))?.name || game.i18n.localize('LDHEROEPOINTZ.Messages.UnknownUser')
   };
 
-  const currentLog = game.settings.get('rnk-reserves', 'heroPointsLog') || [];
+  const currentLog = game.settings.get('ld-hero-pointz', 'heroPointsLog') || [];
   
   // Keep log size manageable
   const newLog = [entry, ...currentLog].slice(0, MAX_LOG_ENTRIES);
   
-  game.settings.set('rnk-reserves', 'heroPointsLog', newLog);
+  game.settings.set('ld-hero-pointz', 'heroPointsLog', newLog);
   
   return entry;
 }
@@ -57,7 +57,7 @@ export function logHeroPointSpending(actorId, actorName, pointsSpent, pointsRema
  * Get all log entries
  */
 export function getHeroPointsLog() {
-  return game.settings.get('rnk-reserves', 'heroPointsLog') || [];
+  return game.settings.get('ld-hero-pointz', 'heroPointsLog') || [];
 }
 
 /**
@@ -73,15 +73,15 @@ export function getActorLog(actorId) {
  */
 export async function clearHeroPointsLog() {
   if (!game.user.isGM) return;
-  await game.settings.set('rnk-reserves', 'heroPointsLog', []);
+  await game.settings.set('ld-hero-pointz', 'heroPointsLog', []);
 
   // Reset hero points on all actors that have them
   for (const actor of game.actors) {
     try {
-      await actor.setFlag('rnk-reserves', 'heroPoints', 0);
-      await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
+      await actor.setFlag('ld-hero-pointz', 'heroPoints', 0);
+      await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', false);
     } catch (e) {
-      console.warn(game.i18n.format('RNKRESERVES.Messages.LogResetFailed', { name: actor.name }), e);
+      console.warn(game.i18n.format('LDHEROEPOINTZ.Messages.LogResetFailed', { name: actor.name }), e);
     }
   }
 }
@@ -91,18 +91,18 @@ export async function clearHeroPointsLog() {
  */
 export async function clearActorLog(actorId) {
   if (!game.user.isGM) return;
-  const currentLog = game.settings.get('rnk-reserves', 'heroPointsLog') || [];
+  const currentLog = game.settings.get('ld-hero-pointz', 'heroPointsLog') || [];
   const filtered = currentLog.filter(entry => entry.actorId !== actorId);
-  await game.settings.set('rnk-reserves', 'heroPointsLog', filtered);
+  await game.settings.set('ld-hero-pointz', 'heroPointsLog', filtered);
 
   // Reset hero points on the actor
   const actor = game.actors.get(actorId);
   if (actor) {
     try {
-      await actor.setFlag('rnk-reserves', 'heroPoints', 0);
-      await actor.setFlag('rnk-reserves', 'heroPointsEnabled', false);
+      await actor.setFlag('ld-hero-pointz', 'heroPoints', 0);
+      await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', false);
     } catch (e) {
-      console.warn(game.i18n.format('RNKRESERVES.Messages.LogResetFailed', { name: actor.name }), e);
+      console.warn(game.i18n.format('LDHEROEPOINTZ.Messages.LogResetFailed', { name: actor.name }), e);
     }
   }
 }
@@ -118,10 +118,10 @@ export async function reduceActorHeroPoints(actorId, amount) {
   const actor = game.actors.get(actorId);
   if (!actor) return;
   
-  const currentPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const newPoints = Math.max(0, currentPoints - amount);
   
-  await actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
   
   // Log the reduction
   logHeroPointSpending(
@@ -142,8 +142,8 @@ export function getActorsSummary() {
   
   // Check all actors
   game.actors.forEach(actor => {
-    const heroPoints = actor.getFlag('rnk-reserves', 'heroPoints');
-    const isEnabled = actor.getFlag('rnk-reserves', 'heroPointsEnabled');
+    const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints');
+    const isEnabled = actor.getFlag('ld-hero-pointz', 'heroPointsEnabled');
     
     // Include if they have points or are explicitly enabled
     if (heroPoints > 0 || isEnabled) {

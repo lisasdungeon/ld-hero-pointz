@@ -1,11 +1,11 @@
 /**
- * Socket communication for RNK Reserves
+ * Socket communication for LD Hero Pointz
  */
 import { logHeroPointSpending } from './logger.js';
 
 export function registerSocket() {
   // Register socket handler
-  game.socket.on('module.rnk-reserves', (data) => {
+  game.socket.on('module.ld-hero-pointz', (data) => {
     handleSocketMessage(data);
   });
 }
@@ -28,7 +28,7 @@ function handleSocketMessage(data) {
  * Send socket message to all clients
  */
 export function emitSocketMessage(type, data) {
-  game.socket.emit('module.rnk-reserves', {
+  game.socket.emit('module.ld-hero-pointz', {
     type,
     ...data
   });
@@ -41,7 +41,7 @@ function handleHeroPointsUpdate(data) {
   const actor = game.actors.get(data.actorId);
   if (!actor) return;
 
-  const oldPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const oldPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const newPoints = data.points;
 
   if (data.userId === game.user.id) {
@@ -49,7 +49,7 @@ function handleHeroPointsUpdate(data) {
     return;
   }
 
-  actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+  actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Log the update
   if (game.user.isGM) {
@@ -76,10 +76,10 @@ function handleHeroPointSpend(data) {
     return;
   }
 
-  const oldPoints = actor.getFlag('rnk-reserves', 'heroPoints') || 0;
+  const oldPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const newPoints = Number.isInteger(data.points) ? data.points : Math.max(oldPoints - 1, 0);
 
-  actor.setFlag('rnk-reserves', 'heroPoints', newPoints);
+  actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Log the spending (GM only)
   if (game.user.isGM) {
