@@ -6,7 +6,8 @@
   "main": "src/main.js",
   "scripts": {
     "build": "node ./scripts/build-release.mjs",
-    "test": "node ./scripts/validate.mjs"
+    "test": "node --test tests/",
+    "test:coverage": "node --test --experimental-test-coverage tests/"
   },
   "author": "Lisa's Dungeon",
   "license": "Lisa's Dungeon Proprietary License",

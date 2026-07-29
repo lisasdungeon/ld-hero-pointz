@@ -1,5 +1,5 @@
 /**
- * RNK Reserves Application Class
+ * LD Hero Pointz Application Class
  * Placeholder for future GM controls or additional UI
  */
 import { emitSocketMessage } from '../socket.js';

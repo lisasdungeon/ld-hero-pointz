@@ -1,5 +1,5 @@
 /**
- * RNK Reserves - Hero Points System for D&D 2024
+ * LD Hero Pointz System for D&D 2024
  * Main entry point for the module
  */
 

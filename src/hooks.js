@@ -238,7 +238,7 @@ export function registerHooks() {
   Hooks.on('updateActor', (actor, data, options, userId) => {
     if (foundry.utils.hasProperty(data, 'flags.ld-hero-pointz.heroPoints')) {
       const points = foundry.utils.getProperty(data, 'flags.ld-hero-pointz.heroPoints');
-      console.log(`RNK™ Reserves | Actor ${actor.name} Hero Points updated to: ${points}`);
+      console.log(`LD Hero Pointz | Actor ${actor.name} Hero Points updated to: ${points}`);
     }
   });
 }
