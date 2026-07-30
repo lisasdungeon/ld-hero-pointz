@@ -1,4 +1,4 @@
-import { rmSync, mkdirSync, cpSync, existsSync, readFileSync } from 'node:fs';
+import { rmSync, mkdirSync, cpSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -24,8 +24,7 @@ for (const entry of ['module.json', 'README.md', 'CHANGELOG.md', 'src', 'styles'
 rmSync(moduleZip, { force: true });
 rmSync(versionedZip, { force: true });
 
-const archiveArgs = ['-NoProfile', '-Command', `Compress-Archive -Path '${tempDir}\\*' -DestinationPath '${moduleZip}' -Force`];
-const archiveResult = spawnSync('powershell.exe', archiveArgs, { cwd: root, stdio: 'inherit' });
+const archiveResult = spawnSync('zip', ['-r', '-X', moduleZip, ...readdirSync(tempDir)], { cwd: tempDir, stdio: 'inherit' });
 if (archiveResult.status !== 0) {
   throw new Error('Failed to create module.zip');
 }

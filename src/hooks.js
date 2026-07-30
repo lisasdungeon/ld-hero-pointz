@@ -82,7 +82,7 @@ function addHeroPointButtons(message, html, data) {
  * Get the current level-based hero point baseline.
  * This is used as a refresh target, not a cap.
  */
-function getHeroPointBaseline(level = 1) {
+export function getHeroPointBaseline(level = 1) {
   return 5 + Math.floor(level / 2);
 }
 
@@ -108,14 +108,18 @@ async function handleHeroPointAction(actor, action, message) {
 
   if (!confirmed) return;
 
-  // Spend the point
-  const newPoints = heroPoints - 1;
+  // Re-read the current value now that the dialog has resolved — anything
+  // could have changed the flag while the GM/player was looking at the
+  // confirmation prompt, and spending against the pre-dialog value would
+  // silently clobber that change.
+  const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
+  const newPoints = Math.max(currentPoints - 1, 0);
   await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Log the spending (local client can still log if GM)
   if (game.user.isGM) {
     const actionLabel = action === 'deathSuccess' ? 'Death Save Success' : 'Add 1d6';
-    logHeroPointSpending(
+    await logHeroPointSpending(
       actor.id,
       actor.name,
       1,
@@ -220,11 +224,19 @@ export function registerHooks() {
     }
   });
 
-  // Add GM controls to actor sheets
-  Hooks.on('renderActorSheet5e', (sheet, html, data) => {
-    if (!game.user.isGM) return;
-    addGMControls(sheet, html, data);
-  });
+  // Add GM controls to actor sheets. dnd5e's 2024-rules character/NPC sheets
+  // are ApplicationV2-based and fire renderActorSheet5eCharacter2 /
+  // renderActorSheet5eNPC2, not the legacy V1 renderActorSheet5e — register
+  // for both the modern names and the legacy one so this keeps working on
+  // whichever sheet class actually renders. addGMControls itself guards
+  // against double-injection, so it's safe if more than one of these fires
+  // for the same render.
+  for (const hookName of ['renderActorSheet5eCharacter2', 'renderActorSheet5eNPC2', 'renderActorSheet5e']) {
+    Hooks.on(hookName, (sheet, html, data) => {
+      if (!game.user.isGM) return;
+      addGMControls(sheet, html, data);
+    });
+  }
 
   // Initialize Hero Points on actors
   Hooks.on('ready', () => {
@@ -262,7 +274,18 @@ function initializeHeroPoints(actor) {
 }
 
 /**
- * Add GM controls to actor sheet
+ * Normalize a hook's `html` argument to a plain HTMLElement, whether Foundry
+ * handed us a raw element (ApplicationV2) or a jQuery-wrapped one (legacy V1).
+ */
+export function toElement(html) {
+  if (!html) return null;
+  if (typeof HTMLElement !== 'undefined' && html instanceof HTMLElement) return html;
+  if (html.jquery) return html[0] ?? null;
+  return null;
+}
+
+/**
+ * Add GM controls to actor sheet.
  */
 function addGMControls(sheet, html, data) {
   const actor = sheet.actor;
@@ -270,11 +293,20 @@ function addGMControls(sheet, html, data) {
   // Skip NPCs unless explicitly enabled
   if (actor.type === 'npc' && !actor.getFlag('ld-hero-pointz', 'heroPointsEnabled')) return;
 
+  const root = toElement(html) ?? sheet.element ?? null;
+  const header = root?.querySelector?.('.window-header');
+  if (!header) return;
+
+  // Multiple hook names can fire for the same render (see registerHooks) and
+  // Foundry can re-render a sheet without a full close/reopen cycle, so drop
+  // any panel already injected before adding a fresh one instead of stacking
+  // duplicates.
+  header.querySelector('.ld-hero-pointz-gm-controls')?.remove();
+
   const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const level = actor.system.details?.level || 1;
   const baselinePoints = getHeroPointBaseline(level);
 
-  // Create GM controls container
   const gmControls = document.createElement('div');
   gmControls.className = 'ld-hero-pointz-gm-controls';
   gmControls.innerHTML = `
@@ -289,15 +321,9 @@ function addGMControls(sheet, html, data) {
     </div>
   `;
 
-  // Add to sheet header
-  const header = html.find('.window-header');
-  if (header.length) {
-    header.append(gmControls);
-  }
+  header.appendChild(gmControls);
 
-  // Add event listeners
   gmControls.addEventListener('click', async (event) => {
-    // Find the button (in case icon was clicked)
     const btn = event.target.closest('button');
     if (!btn) return;
     const action = btn.dataset.action;

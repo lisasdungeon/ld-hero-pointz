@@ -33,10 +33,6 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
     };
   }
 
-  _onSubmit(formData) {
-    // Handle form submission if needed
-  }
-
   _attachPartListeners(partId, htmlElement, options) {
     super._attachPartListeners(partId, htmlElement, options);
 
@@ -86,7 +82,7 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
           await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
           
           // Log the award
-          logHeroPointSpending(
+          await logHeroPointSpending(
             actor.id,
             actor.name,
             pointsToAdd,

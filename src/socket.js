@@ -16,10 +16,14 @@ export function registerSocket() {
 function handleSocketMessage(data) {
   switch (data.type) {
     case 'updateHeroPoints':
-      handleHeroPointsUpdate(data);
+      handleHeroPointsUpdate(data).catch((err) => {
+        console.warn('LD Hero Pointz | Failed to apply hero point update from socket:', err);
+      });
       break;
     case 'spendHeroPoint':
-      handleHeroPointSpend(data);
+      handleHeroPointSpend(data).catch((err) => {
+        console.warn('LD Hero Pointz | Failed to apply hero point spend from socket:', err);
+      });
       break;
   }
 }
@@ -37,7 +41,7 @@ export function emitSocketMessage(type, data) {
 /**
  * Handle Hero Points update from socket
  */
-function handleHeroPointsUpdate(data) {
+async function handleHeroPointsUpdate(data) {
   const actor = game.actors.get(data.actorId);
   if (!actor) return;
 
@@ -49,11 +53,11 @@ function handleHeroPointsUpdate(data) {
     return;
   }
 
-  actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
+  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Log the update
   if (game.user.isGM) {
-    logHeroPointSpending(
+    await logHeroPointSpending(
       data.actorId,
       actor.name,
       Math.max(0, oldPoints - newPoints),
@@ -67,7 +71,7 @@ function handleHeroPointsUpdate(data) {
 /**
  * Handle Hero Point spend from socket
  */
-function handleHeroPointSpend(data) {
+async function handleHeroPointSpend(data) {
   const actor = game.actors.get(data.actorId);
   if (!actor) return;
 
@@ -79,11 +83,11 @@ function handleHeroPointSpend(data) {
   const oldPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const newPoints = Number.isInteger(data.points) ? data.points : Math.max(oldPoints - 1, 0);
 
-  actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
+  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
   // Log the spending (GM only)
   if (game.user.isGM) {
-    logHeroPointSpending(
+    await logHeroPointSpending(
       data.actorId,
       actor.name,
       oldPoints - newPoints,

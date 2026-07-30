@@ -45,7 +45,7 @@ class LdHeroPointzModule {
       return;
     }
 
-    const clamped = Math.max(points, 0);
+    const clamped = Math.max(Number.isFinite(points) ? points : 1, 0);
 
     await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', true);
     await actor.setFlag('ld-hero-pointz', 'heroPoints', clamped);

@@ -27,7 +27,7 @@ export function initializeLogger() {
  * @param {string} action - Type of action (deathSuccess, addD6, award, etc)
  * @param {string} [userId] - Who triggered the action (defaults to current user)
  */
-export function logHeroPointSpending(actorId, actorName, pointsSpent, pointsRemaining, action, userId = null) {
+export async function logHeroPointSpending(actorId, actorName, pointsSpent, pointsRemaining, action, userId = null) {
   if (!game.user.isGM) return;
 
   const entry = {
@@ -44,12 +44,12 @@ export function logHeroPointSpending(actorId, actorName, pointsSpent, pointsRema
   };
 
   const currentLog = game.settings.get('ld-hero-pointz', 'heroPointsLog') || [];
-  
+
   // Keep log size manageable
   const newLog = [entry, ...currentLog].slice(0, MAX_LOG_ENTRIES);
-  
-  game.settings.set('ld-hero-pointz', 'heroPointsLog', newLog);
-  
+
+  await game.settings.set('ld-hero-pointz', 'heroPointsLog', newLog);
+
   return entry;
 }
 
@@ -122,9 +122,9 @@ export async function reduceActorHeroPoints(actorId, amount) {
   const newPoints = Math.max(0, currentPoints - amount);
   
   await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
-  
+
   // Log the reduction
-  logHeroPointSpending(
+  await logHeroPointSpending(
     actorId,
     actor.name,
     amount,
