@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Compliance pass: sole author Lisa's Dungeon with Discord MystryssLysa / email Lisasdungeon@gmail.com / Patreon LisasDungeon; enforce 500 LOC file cap; remove non-compliant branding and symbols where present.
+
+
 ## 1.3.12
 
 - Fixed the GM Management window and Activity Log Viewer rendering completely unstyled: the CSS still carried a leftover "-reserves-" segment from the RNK Reserves rebrand (e.g. `.ld-hero-pointz-reserves-buttons` instead of `.ld-hero-pointz-buttons`), so none of the module's own selectors ever matched the real DOM.
