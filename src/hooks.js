@@ -4,9 +4,9 @@ import { logHeroPointSpending } from './logger.js';
 /**
  * Get actor from chat message
  */
-function getActorFromMessage(message) {
+export function getActorFromMessage(message) {
   if (!game?.actors || !message?.speaker) return null;
-  
+
   if (message.speaker.actor) {
     return game.actors.get(message.speaker.actor);
   }
@@ -20,10 +20,10 @@ function getActorFromMessage(message) {
 /**
  * Add Hero Point buttons to chat messages
  */
-function addHeroPointButtons(message, html, data) {
+export function addHeroPointButtons(message, html, data) {
   // Only add if actor has Hero Points
   if (!html || !message) return;
-  
+
   const actor = getActorFromMessage(message);
   if (!actor) return;
 
@@ -36,7 +36,7 @@ function addHeroPointButtons(message, html, data) {
   // Determine if this is a d20 roll or a death save
   const roll = message.rolls?.[0];
   const isD20 = roll?.terms?.[0]?.faces === 20;
-  const isDeathSave = message.getFlag('dnd5e', 'roll')?.type === 'death' || 
+  const isDeathSave = message.getFlag?.('dnd5e', 'roll')?.type === 'death' ||
                       message.flavor?.toLowerCase().includes('death saving throw');
 
   if (!isD20 && !isDeathSave) return;
@@ -44,7 +44,7 @@ function addHeroPointButtons(message, html, data) {
   // Create button container
   const buttonContainer = document.createElement('div');
   buttonContainer.className = 'ld-hero-pointz-buttons';
-  
+
   let actionsHtml = '';
   if (isDeathSave) {
     actionsHtml = `<button class="ld-hero-pointz-btn" data-action="deathSuccess">${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSuccess')}</button>`;
@@ -62,7 +62,7 @@ function addHeroPointButtons(message, html, data) {
   `;
 
   // Add to chat message
-  const messageContent = html.querySelector('.message-content');
+  const messageContent = html.querySelector?.('.message-content');
   if (messageContent) {
     messageContent.appendChild(buttonContainer);
   } else {
@@ -89,7 +89,7 @@ export function getHeroPointBaseline(level = 1) {
 /**
  * Handle Hero Point spending actions
  */
-async function handleHeroPointAction(actor, action, message) {
+export async function handleHeroPointAction(actor, action, message) {
   const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   if (heroPoints <= 0) {
     ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Chat.NoPoints'));
@@ -97,10 +97,10 @@ async function handleHeroPointAction(actor, action, message) {
   }
 
   // Confirm spending
-  const content = action === 'deathSuccess' 
+  const content = action === 'deathSuccess'
     ? game.i18n.localize('LDHEROEPOINTZ.Chat.SpendDeathSave')
     : game.i18n.localize('LDHEROEPOINTZ.Chat.SpendAddD6');
-    
+
   const confirmed = await Dialog.confirm({
     title: game.i18n.localize('LDHEROEPOINTZ.Chat.SpendTitle'),
     content: content
@@ -144,19 +144,21 @@ async function handleHeroPointAction(actor, action, message) {
     case 'deathSuccess':
       await handleDeathSaveSuccess(message, actor);
       break;
+    default:
+      break;
   }
 }
 
 /**
  * Add 1d6 to a d20 roll
  */
-async function handleAddD6(message, actor) {
+export async function handleAddD6(message, actor) {
   const bonusRoll = await new Roll('1d6').evaluate();
   const totalBonus = bonusRoll.total;
   const flavor = message.flavor || game.i18n.localize('LDHEROEPOINTZ.Chat.RollDefaultFlavor');
 
   await bonusRoll.toMessage({
-    speaker: ChatMessage.getSpeaker({actor}),
+    speaker: ChatMessage.getSpeaker({ actor }),
     flavor: game.i18n.format('LDHEROEPOINTZ.Chat.AddD6Flavor', { flavor })
   });
 
@@ -166,28 +168,27 @@ async function handleAddD6(message, actor) {
 /**
  * Handle Death Save automatic success
  */
-async function handleDeathSaveSuccess(message, actor) {
+export async function handleDeathSaveSuccess(message, actor) {
   await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({actor}),
+    speaker: ChatMessage.getSpeaker({ actor }),
     content: `<div class="dnd5e chat-card"><header class="card-header"><h3>${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveTitle')}</h3></header>
               <div class="card-content">${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveContent')}</div></div>`,
     flavor: game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveFlavor')
   });
-  
+
   ui.notifications.info(game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveSuccess'));
 }
-
 
 export function registerHooks() {
   // Add buttons to chat messages
   Hooks.on('renderChatMessageHTML', (message, html, data) => {
     if (!game || !game.users) return;
-    
+
     // GM always sees, players only if they have points
     if (!game.user.isGM) {
       const actor = getActorFromMessage(message);
       if (!actor) return;
-      
+
       // Verify the user is the owner/controller of this actor
       if (!actor.isOwner) return;
 
@@ -210,10 +211,10 @@ export function registerHooks() {
         const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
         const baselinePoints = getHeroPointBaseline(newLevel);
         const refreshedPoints = Math.max(currentPoints, baselinePoints);
-        
+
         // Refresh up to the level baseline without removing any excess points.
         foundry.utils.setProperty(updateData, 'flags.ld-hero-pointz.heroPoints', refreshedPoints);
-        
+
         // Notify the user
         ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.LeveledUp', {
           name: actor.name,
@@ -258,7 +259,7 @@ export function registerHooks() {
 /**
  * Initialize Hero Points on an actor according to 2024 rules
  */
-function initializeHeroPoints(actor) {
+export function initializeHeroPoints(actor) {
   // Skip NPCs — they must be explicitly enabled via the API
   if (actor.type === 'npc') return;
 
@@ -287,7 +288,7 @@ export function toElement(html) {
 /**
  * Add GM controls to actor sheet.
  */
-function addGMControls(sheet, html, data) {
+export function addGMControls(sheet, html, data) {
   const actor = sheet.actor;
 
   // Skip NPCs unless explicitly enabled
@@ -336,7 +337,7 @@ function addGMControls(sheet, html, data) {
 /**
  * Handle GM actions for awarding/resetting Hero Points
  */
-async function handleGMAction(actor, action, currentPoints, baselinePoints) {
+export async function handleGMAction(actor, action, currentPoints, baselinePoints) {
   let newPoints = currentPoints;
 
   switch (action) {

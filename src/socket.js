@@ -4,7 +4,6 @@
 import { logHeroPointSpending } from './logger.js';
 
 export function registerSocket() {
-  // Register socket handler
   game.socket.on('module.ld-hero-pointz', (data) => {
     handleSocketMessage(data);
   });
@@ -13,7 +12,7 @@ export function registerSocket() {
 /**
  * Handle incoming socket messages
  */
-function handleSocketMessage(data) {
+export function handleSocketMessage(data) {
   switch (data.type) {
     case 'updateHeroPoints':
       handleHeroPointsUpdate(data).catch((err) => {
@@ -24,6 +23,8 @@ function handleSocketMessage(data) {
       handleHeroPointSpend(data).catch((err) => {
         console.warn('LD Hero Pointz | Failed to apply hero point spend from socket:', err);
       });
+      break;
+    default:
       break;
   }
 }
@@ -41,7 +42,7 @@ export function emitSocketMessage(type, data) {
 /**
  * Handle Hero Points update from socket
  */
-async function handleHeroPointsUpdate(data) {
+export async function handleHeroPointsUpdate(data) {
   const actor = game.actors.get(data.actorId);
   if (!actor) return;
 
@@ -71,7 +72,7 @@ async function handleHeroPointsUpdate(data) {
 /**
  * Handle Hero Point spend from socket
  */
-async function handleHeroPointSpend(data) {
+export async function handleHeroPointSpend(data) {
   const actor = game.actors.get(data.actorId);
   if (!actor) return;
 

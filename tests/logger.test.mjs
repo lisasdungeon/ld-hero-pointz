@@ -182,3 +182,101 @@ test('exportLogAsJSON: bundles the log, summary, and a count', async () => {
   assert.ok(exported.summary.a1);
   assert.ok(exported.exported);
 });
+
+test('clearHeroPointsLog: logs a warning when setFlag throws for an actor', async () => {
+  const g = makeGame({
+    actors: [{ id: 'a1', name: 'Broken', flags: { 'ld-hero-pointz': { heroPoints: 2 } } }]
+  });
+  const actor = g.actors.get('a1');
+  actor.setFlag = async () => {
+    throw new Error('permission');
+  };
+  const warnings = [];
+  // withGame silences console.warn; capture after it restores by not using withGame's silence
+  const originalGame = globalThis.game;
+  const originalFoundry = globalThis.foundry;
+  globalThis.game = g;
+  globalThis.foundry = { utils: { randomID: () => `id-${++idCounter}` } };
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+  try {
+    await clearHeroPointsLog();
+  } finally {
+    console.warn = originalWarn;
+    globalThis.game = originalGame;
+    globalThis.foundry = originalFoundry;
+  }
+  assert.equal(warnings.length, 1);
+});
+
+test('clearActorLog: logs a warning when setFlag throws; no-ops for non-GM / missing actor', async () => {
+  const g = makeGame({
+    actors: [{ id: 'a1', name: 'Broken', flags: { 'ld-hero-pointz': { heroPoints: 2 } } }]
+  });
+  g.settingsStore['ld-hero-pointz.heroPointsLog'] = [{ actorId: 'a1' }, { actorId: 'a2' }];
+  const actor = g.actors.get('a1');
+  actor.setFlag = async () => {
+    throw new Error('permission');
+  };
+  const warnings = [];
+  const originalGame = globalThis.game;
+  const originalFoundry = globalThis.foundry;
+  globalThis.game = g;
+  globalThis.foundry = { utils: { randomID: () => `id-${++idCounter}` } };
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+  try {
+    await clearActorLog('a1');
+  } finally {
+    console.warn = originalWarn;
+    globalThis.game = originalGame;
+    globalThis.foundry = originalFoundry;
+  }
+  assert.equal(warnings.length, 1);
+
+  const nonGm = makeGame({ isGM: false });
+  await withGame(nonGm, () => clearActorLog('a1'));
+  assert.equal('ld-hero-pointz.heroPointsLog' in nonGm.settingsStore, false);
+
+  const g2 = makeGame();
+  g2.settingsStore['ld-hero-pointz.heroPointsLog'] = [{ actorId: 'a1' }];
+  await withGame(g2, () => clearActorLog('missing'));
+  // No actor named "missing" — log entries for other actors are untouched.
+  assert.deepEqual(g2.settingsStore['ld-hero-pointz.heroPointsLog'], [{ actorId: 'a1' }]);
+});
+
+test('clearHeroPointsLog: non-GM is a no-op', async () => {
+  const g = makeGame({ isGM: false });
+  await withGame(g, () => clearHeroPointsLog());
+  assert.equal('ld-hero-pointz.heroPointsLog' in g.settingsStore, false);
+});
+
+test('reduceActorHeroPoints: non-GM and missing actor are no-ops', async () => {
+  const g = makeGame({ isGM: false, actors: [{ id: 'a1', name: 'Fighter', flags: { 'ld-hero-pointz': { heroPoints: 3 } } }] });
+  await withGame(g, () => reduceActorHeroPoints('a1', 1));
+  assert.equal(g.actors.get('a1').calls.setFlag.length, 0);
+
+  const g2 = makeGame();
+  await withGame(g2, () => reduceActorHeroPoints('missing', 1));
+});
+
+test('logHeroPointSpending: uses UnknownUser when the user id is not found', async () => {
+  const g = makeGame();
+  await withGame(g, () => logHeroPointSpending('a1', 'Fighter', 1, 4, 'addD6', 'ghost'));
+  const log = g.settingsStore['ld-hero-pointz.heroPointsLog'];
+  assert.equal(log[0].userName, 'LDHEROEPOINTZ.Messages.UnknownUser');
+});
+
+test('initializeLogger: does nothing when the log already exists', async () => {
+  const g = makeGame();
+  g.settingsStore['ld-hero-pointz.heroPointsLog'] = [{ id: 'existing' }];
+  await withGame(g, () => initializeLogger());
+  assert.deepEqual(g.settingsStore['ld-hero-pointz.heroPointsLog'], [{ id: 'existing' }]);
+});
+
+test('getHeroPointsLog returns empty array when setting is falsy', async () => {
+  const g = makeGame();
+  g.settingsStore['ld-hero-pointz.heroPointsLog'] = null;
+  assert.deepEqual(await withGame(g, () => getHeroPointsLog()), []);
+});
+

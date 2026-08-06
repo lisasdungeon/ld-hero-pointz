@@ -1,25 +1,20 @@
 /**
  * LD Hero Pointz System for D&D 2024
- * Main entry point for the module
+ * Main entry point — registers settings/hooks/socket on init; logger on ready.
+ * Heavy Application classes load only when a settings menu is opened.
  */
 
-import { LdHeroPointz } from './apps/LdHeroPointz.js';
 import { registerSettings } from './settings.js';
 import { registerHooks } from './hooks.js';
 import { registerSocket } from './socket.js';
 import { initializeLogger } from './logger.js';
 
-class LdHeroPointzModule {
+export class LdHeroPointzModule {
   static ID = 'ld-hero-pointz';
 
   static init() {
-    // Register settings
     registerSettings();
-
-    // Register hooks
     registerHooks();
-
-    // Register socket
     registerSocket();
   }
 
@@ -81,9 +76,17 @@ class LdHeroPointzModule {
   }
 }
 
-// Initialize on Foundry ready
-Hooks.once('init', LdHeroPointzModule.init);
-Hooks.once('ready', LdHeroPointzModule.ready);
+export function registerEntryHooks() {
+  Hooks.once('init', LdHeroPointzModule.init);
+  Hooks.once('ready', LdHeroPointzModule.ready);
+}
 
-// Export for global access
-window.LdHeroPointz = LdHeroPointzModule;
+registerEntryHooks();
+
+// Export for global access (macros / console)
+if (typeof globalThis !== 'undefined') {
+  globalThis.LdHeroPointz = LdHeroPointzModule;
+}
+if (typeof window !== 'undefined') {
+  window.LdHeroPointz = LdHeroPointzModule;
+}

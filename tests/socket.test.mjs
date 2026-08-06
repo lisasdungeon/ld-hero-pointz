@@ -1,18 +1,42 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { emitSocketMessage, registerSocket } from '../src/socket.js';
+import {
+  emitSocketMessage,
+  registerSocket,
+  handleSocketMessage,
+  handleHeroPointsUpdate,
+  handleHeroPointSpend
+} from '../src/socket.js';
 
 async function withGame(gameStub, run) {
   const originalGame = globalThis.game;
   const originalConsoleWarn = console.warn;
+  const originalFoundry = globalThis.foundry;
   globalThis.game = gameStub;
+  globalThis.foundry = {
+    utils: { randomID: () => 'rid' }
+  };
   console.warn = () => {};
   try {
     return await run();
   } finally {
     globalThis.game = originalGame;
+    globalThis.foundry = originalFoundry;
     console.warn = originalConsoleWarn;
   }
+}
+
+function makeActor({ id = 'a1', name = 'Fighter', points = 2 } = {}) {
+  const flags = { heroPoints: points };
+  return {
+    id,
+    name,
+    getFlag: (_m, key) => flags[key],
+    setFlag: async (_m, key, value) => {
+      flags[key] = value;
+    },
+    _flags: flags
+  };
 }
 
 test('registerSocket: subscribes to the module.ld-hero-pointz channel', async () => {
@@ -46,10 +70,10 @@ test('an inbound updateHeroPoints message applies the flag on other clients and 
     users: { get: () => null },
     actors: { get: (id) => (id === 'a1' ? actor : null) },
     socket: { on: (channel, fn) => { g._handler = fn; } },
-    i18n: { localize: (k) => k, format: (k) => k }
+    i18n: { localize: (k) => k, format: (k) => k },
+    settings: { get: () => [], set: async () => {} }
   };
   await withGame(g, () => registerSocket());
-  // Simulate a broadcast from a different client (originator id !== this client's id).
   await withGame(g, () => g._handler({ type: 'updateHeroPoints', actorId: 'a1', points: 5, userId: 'sender' }));
   assert.deepEqual(setFlagCalls, [{ moduleId: 'ld-hero-pointz', key: 'heroPoints', value: 5 }]);
 });
@@ -71,12 +95,7 @@ test('an inbound message from this same client (the originator) is skipped — a
   assert.equal(setFlagCalls.length, 0);
 });
 
-test('a rejected setFlag (e.g. a permission error on a non-owner client) is caught, not an unhandled rejection', async () => {
-  // This is the regression test for the original bug: handleSocketMessage
-  // called handleHeroPointsUpdate/handleHeroPointSpend without awaiting or
-  // catching them, so any client that received a broadcast for an actor it
-  // doesn't own (a common case — Foundry's setFlag requires OWNER/GM) would
-  // throw an unhandled promise rejection on every single broadcast.
+test('a rejected setFlag is caught, not an unhandled rejection', async () => {
   const warnings = [];
   const originalWarn = console.warn;
   console.warn = (...args) => warnings.push(args);
@@ -98,9 +117,6 @@ test('a rejected setFlag (e.g. a permission error on a non-owner client) is caug
 
   try {
     await withGame(g, () => registerSocket());
-    // handleSocketMessage is synchronous and fire-and-forgets the async
-    // handler with a .catch() — invoke it directly and give the microtask
-    // queue a turn to let that rejection actually surface.
     withGame(g, () => g._handler({ type: 'updateHeroPoints', actorId: 'a1', points: 5, userId: 'sender' }));
     await new Promise((resolve) => setTimeout(resolve, 10));
   } finally {
@@ -120,4 +136,100 @@ test('an unrecognized actorId in an inbound message is a no-op, not a throw', as
   };
   await withGame(g, () => registerSocket());
   await assert.doesNotReject(() => withGame(g, () => g._handler({ type: 'updateHeroPoints', actorId: 'missing', points: 5, userId: 'sender' })));
+});
+
+test('handleHeroPointsUpdate logs when the receiver is GM', async () => {
+  const actor = makeActor({ points: 4 });
+  const logSets = [];
+  const g = {
+    user: { id: 'gm', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
+    actors: { get: () => actor },
+    settings: {
+      get: () => [],
+      set: async (_m, _k, v) => { logSets.push(v); }
+    },
+    i18n: { localize: (k) => k, format: (k) => k }
+  };
+  await withGame(g, () => handleHeroPointsUpdate({
+    actorId: 'a1',
+    points: 6,
+    userId: 'other'
+  }));
+  assert.equal(actor._flags.heroPoints, 6);
+  assert.equal(logSets.length, 1);
+  assert.equal(logSets[0][0].action, 'awarded');
+});
+
+test('handleHeroPointSpend applies integer points, falls back when non-integer, logs for GM', async () => {
+  const actor = makeActor({ points: 5 });
+  const logSets = [];
+  const g = {
+    user: { id: 'gm', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
+    actors: { get: () => actor },
+    settings: {
+      get: () => [],
+      set: async (_m, _k, v) => { logSets.push(v); }
+    },
+    i18n: { localize: (k) => k, format: (k) => k }
+  };
+
+  await withGame(g, () => handleHeroPointSpend({
+    actorId: 'a1',
+    points: 3,
+    action: 'addD6',
+    userId: 'player1'
+  }));
+  assert.equal(actor._flags.heroPoints, 3);
+  assert.equal(logSets[0][0].action, 'addD6');
+
+  await withGame(g, () => handleHeroPointSpend({
+    actorId: 'a1',
+    points: 'x',
+    userId: 'player1'
+  }));
+  assert.equal(actor._flags.heroPoints, 2);
+  assert.equal(logSets[1][0].action, 'spent');
+});
+
+test('handleHeroPointSpend skips originator and missing actors', async () => {
+  const actor = makeActor({ points: 5 });
+  const g = {
+    user: { id: 'me', isGM: false },
+    actors: { get: (id) => (id === 'a1' ? actor : null) }
+  };
+  await withGame(g, () => handleHeroPointSpend({ actorId: 'a1', points: 1, userId: 'me' }));
+  assert.equal(actor._flags.heroPoints, 5);
+
+  await withGame(g, () => handleHeroPointSpend({ actorId: 'missing', points: 1, userId: 'other' }));
+});
+
+test('handleSocketMessage routes spend path and ignores unknown types; spend failures are caught', async () => {
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+
+  const actor = {
+    id: 'a1',
+    name: 'Fighter',
+    getFlag: () => 2,
+    setFlag: async () => { throw new Error('fail spend'); }
+  };
+  const g = {
+    user: { id: 'receiver', isGM: false },
+    actors: { get: () => actor }
+  };
+
+  try {
+    await withGame(g, () => {
+      handleSocketMessage({ type: 'unknown' });
+      handleSocketMessage({ type: 'spendHeroPoint', actorId: 'a1', points: 1, userId: 'sender' });
+    });
+    await new Promise((r) => setTimeout(r, 10));
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.equal(warnings.length, 1);
+  assert.match(String(warnings[0][0]), /spend/);
 });
