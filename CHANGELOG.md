@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.3.13
 
+- Compliance and hardening release: sole Lisa's Dungeon authorship and contact fields (Discord MystryssLysa, email Lisasdungeon@gmail.com, Patreon LisasDungeon); lazy loading / trigger-based startup where needed; 500 LOC file cap; full source line coverage; no emoji or AI references in the shipped package.
 - Compliance pass: sole author Lisa's Dungeon with Discord MystryssLysa / email Lisasdungeon@gmail.com / Patreon LisasDungeon; enforce 500 LOC file cap; remove non-compliant branding and symbols where present.
 - Lazy-load management and log-viewer Application classes from settings menus (dynamic import on open); entry point no longer eagerly imports heavy UI.
 - Full line coverage on all source files under `src/` (hooks, socket, logger, settings, main, apps).
-
 
 ## 1.3.12
 

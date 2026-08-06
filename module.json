@@ -11,7 +11,7 @@
       "patreon": "https://patreon.com/LisasDungeon"
     }
   ],
-  "version": "1.3.12",
+  "version": "1.3.13",
   "compatibility": {
     "minimum": 13,
     "verified": 14
@@ -37,7 +37,7 @@
   "socket": true,
   "flags": {
     "ld-hero-pointz": {
-      "copyright": "© 2026 Lisa's Dungeon. All rights reserved. This module is protected by intellectual property laws. Unauthorized modification, reverse engineering, or redistribution is prohibited."
+      "copyright": "\u00a9 2026 Lisa's Dungeon. All rights reserved. This module is protected by intellectual property laws. Unauthorized modification, reverse engineering, or redistribution is prohibited."
     }
   }
 }
