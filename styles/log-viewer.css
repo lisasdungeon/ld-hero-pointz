@@ -14,15 +14,15 @@
   min-height: 100%;
 }
 
-.log-controls {
+.ld-hero-pointz-log-viewer .log-controls {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
   flex-wrap: wrap;
 }
 
-.log-controls select,
-.log-controls button {
+.ld-hero-pointz-log-viewer .log-controls select,
+.ld-hero-pointz-log-viewer .log-controls button {
   padding: 0.4rem 0.8rem;
   border: 1px solid #999;
   border-radius: 3px;
@@ -32,12 +32,12 @@
   font-size: 0.9rem;
 }
 
-.log-controls button:hover {
+.ld-hero-pointz-log-viewer .log-controls button:hover {
   background: #3a3a3a;
 }
 
-.log-summary,
-.log-entries {
+.ld-hero-pointz-log-viewer .log-summary,
+.ld-hero-pointz-log-viewer .log-entries {
   flex: 1;
   overflow-y: auto;
   border: 1px solid #555;
@@ -80,22 +80,22 @@
   background: rgba(255,255,255,0.05);
 }
 
-.text-center {
+.ld-hero-pointz-log-viewer .text-center {
   text-align: center;
 }
 
-.text-small {
+.ld-hero-pointz-log-viewer .text-small {
   font-size: 0.8rem;
   color: #999;
 }
 
-.text-muted {
+.ld-hero-pointz-log-viewer .text-muted {
   color: #666;
   font-style: italic;
 }
 
-.ld-hero-pointz-clear-actor-log {
-  background: #8b0000;
+.ld-hero-pointz-clear-actor-log,
+.ld-hero-pointz-reduce-actor-points {
   color: #fff;
   border: none;
   padding: 0.3rem 0.6rem;
@@ -104,12 +104,24 @@
   font-size: 0.8rem;
 }
 
+.ld-hero-pointz-clear-actor-log {
+  background: #8b0000;
+}
+
 .ld-hero-pointz-clear-actor-log:hover {
   background: #b30000;
 }
 
-.log-summary h3,
-.log-entries h3 {
+.ld-hero-pointz-reduce-actor-points {
+  background: #5a3a00;
+}
+
+.ld-hero-pointz-reduce-actor-points:hover {
+  background: #7a4e00;
+}
+
+.ld-hero-pointz-log-viewer .log-summary h3,
+.ld-hero-pointz-log-viewer .log-entries h3 {
   margin: 0 0 0.75rem 0;
   color: #fb0;
   border-bottom: 1px solid #555;

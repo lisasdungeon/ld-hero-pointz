@@ -14,7 +14,7 @@ rmSync(tempDir, { recursive: true, force: true });
 mkdirSync(tempDir, { recursive: true });
 mkdirSync(zipsDir, { recursive: true });
 
-for (const entry of ['module.json', 'README.md', 'CHANGELOG.md', 'src', 'styles', 'templates', 'languages']) {
+for (const entry of ['module.json', 'README.md', 'CHANGELOG.md', 'LICENSE', 'src', 'styles', 'templates', 'languages']) {
   const from = path.join(root, entry);
   if (existsSync(from)) {
     cpSync(from, path.join(tempDir, entry), { recursive: true });

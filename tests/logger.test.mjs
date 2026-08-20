@@ -165,7 +165,7 @@ test('getActorsSummary: includes actors with points or explicitly enabled, exclu
   const g = makeGame({
     actors: [
       { id: 'a1', name: 'Has points', flags: { 'ld-hero-pointz': { heroPoints: 3 } } },
-      { id: 'a2', name: 'Enabled but zero', flags: { 'ld-hero-pointz': { heroPoints: 0, heroPointsEnabled: true } } },
+      { id: 'a2', name: 'Enabled but zero', flags: { 'ld-hero-pointz': { heroPointsEnabled: true } } },
       { id: 'a3', name: 'Untouched', flags: {} }
     ]
   });
@@ -241,7 +241,7 @@ test('clearActorLog: logs a warning when setFlag throws; no-ops for non-GM / mis
   const g2 = makeGame();
   g2.settingsStore['ld-hero-pointz.heroPointsLog'] = [{ actorId: 'a1' }];
   await withGame(g2, () => clearActorLog('missing'));
-  // No actor named "missing" — log entries for other actors are untouched.
+  // No actor named "missing". Log entries for other actors are untouched.
   assert.deepEqual(g2.settingsStore['ld-hero-pointz.heroPointsLog'], [{ actorId: 'a1' }]);
 });
 

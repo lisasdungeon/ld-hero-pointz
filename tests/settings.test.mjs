@@ -9,7 +9,7 @@ test('registerSettings registers both menus and world settings', async () => {
   const { registerSettings } = await import('../src/settings.js');
   registerSettings();
 
-  assert.ok(settingsStore.has('ld-hero-pointz.menu.reservesMenu'));
+  assert.ok(settingsStore.has('ld-hero-pointz.menu.managementMenu'));
   assert.ok(settingsStore.has('ld-hero-pointz.menu.logViewerMenu'));
   assert.equal(game.settings.get('ld-hero-pointz', 'autoAward'), true);
   assert.equal(game.settings.get('ld-hero-pointz', 'targetActorUuid'), '');
@@ -49,12 +49,12 @@ test('registered menu types lazy-load apps when rendered', async () => {
   const { registerSettings } = await import('../src/settings.js');
   registerSettings();
 
-  const reserves = settingsStore.get('ld-hero-pointz.menu.reservesMenu');
+  const managementMenu = settingsStore.get('ld-hero-pointz.menu.managementMenu');
   const logMenu = settingsStore.get('ld-hero-pointz.menu.logViewerMenu');
-  assert.equal(typeof reserves.type, 'function');
+  assert.equal(typeof managementMenu.type, 'function');
   assert.equal(typeof logMenu.type, 'function');
 
-  const management = new reserves.type();
+  const management = new managementMenu.type();
   const logViewer = new logMenu.type();
 
   // render will dynamic-import real apps; with our ApplicationV2 mock they construct

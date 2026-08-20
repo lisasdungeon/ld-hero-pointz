@@ -1,7 +1,7 @@
 /**
- * LD Hero Pointz System for D&D 2024
- * Main entry point — registers settings/hooks/socket on init; logger on ready.
- * Heavy Application classes load only when a settings menu is opened.
+ * Copyright 2026 Lisa's Dungeon
+ * LD Hero Pointz entry point. Settings, hooks, and socket register on init.
+ * Application classes load when a settings menu is opened.
  */
 
 import { registerSettings } from './settings.js';
@@ -83,7 +83,6 @@ export function registerEntryHooks() {
 
 registerEntryHooks();
 
-// Export for global access (macros / console)
 if (typeof globalThis !== 'undefined') {
   globalThis.LdHeroPointz = LdHeroPointzModule;
 }

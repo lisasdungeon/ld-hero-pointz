@@ -1,7 +1,7 @@
 {
   "id": "ld-hero-pointz",
   "title": "LD Hero Pointz",
-  "description": "D&D 5e hero point management for Foundry VTT with GM controls, synchronized player spending, and activity logging.",
+  "description": "D&D 5e hero point management for Foundry VTT with GM controls, synchronized player spending, and activity logging.<br><a href='https://patreon.com/LisasDungeon'><b>Support Lisa's Dungeon on Patreon</b></a>.",
   "authors": [
     {
       "name": "Lisa's Dungeon",
@@ -11,7 +11,8 @@
       "patreon": "https://patreon.com/LisasDungeon"
     }
   ],
-  "version": "1.3.13",
+  "version": "1.3.14",
+  "license": "LICENSE",
   "compatibility": {
     "minimum": 13,
     "verified": 14
@@ -19,6 +20,9 @@
   "url": "https://github.com/lisasdungeon/ld-hero-pointz",
   "manifest": "https://github.com/lisasdungeon/ld-hero-pointz/releases/latest/download/module.json",
   "download": "https://github.com/lisasdungeon/ld-hero-pointz/releases/latest/download/ld-hero-pointz.zip",
+  "readme": "https://github.com/lisasdungeon/ld-hero-pointz/blob/main/README.md",
+  "bugs": "https://github.com/lisasdungeon/ld-hero-pointz/issues",
+  "changelog": "https://github.com/lisasdungeon/ld-hero-pointz/blob/main/CHANGELOG.md",
   "esmodules": [
     "src/main.js"
   ],
@@ -33,6 +37,14 @@
       "path": "languages/en.json"
     }
   ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system"
+      }
+    ]
+  },
   "protected": false,
   "socket": true,
   "flags": {

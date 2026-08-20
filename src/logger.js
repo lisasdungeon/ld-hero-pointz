@@ -1,9 +1,8 @@
 /**
- * Hero Points Logging System
- * Tracks all hero point spending and updates
+ * Copyright 2026 Lisa's Dungeon
+ * Hero point activity log stored in a world setting.
  */
 
-const LOG_STORAGE_KEY = 'ld-hero-pointz-log';
 const MAX_LOG_ENTRIES = 500;
 
 /**
@@ -11,8 +10,7 @@ const MAX_LOG_ENTRIES = 500;
  */
 export function initializeLogger() {
   if (!game.user.isGM) return;
-  
-  // Create game world flag if it doesn't exist
+
   if (!game.settings.get('ld-hero-pointz', 'heroPointsLog')) {
     game.settings.set('ld-hero-pointz', 'heroPointsLog', []);
   }
@@ -44,8 +42,6 @@ export async function logHeroPointSpending(actorId, actorName, pointsSpent, poin
   };
 
   const currentLog = game.settings.get('ld-hero-pointz', 'heroPointsLog') || [];
-
-  // Keep log size manageable
   const newLog = [entry, ...currentLog].slice(0, MAX_LOG_ENTRIES);
 
   await game.settings.set('ld-hero-pointz', 'heroPointsLog', newLog);
@@ -68,6 +64,15 @@ export function getActorLog(actorId) {
   return fullLog.filter(entry => entry.actorId === actorId);
 }
 
+async function resetActorFlags(actor) {
+  try {
+    await actor.setFlag('ld-hero-pointz', 'heroPoints', 0);
+    await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', false);
+  } catch (e) {
+    console.warn(game.i18n.format('LDHEROEPOINTZ.Messages.LogResetFailed', { name: actor.name }), e);
+  }
+}
+
 /**
  * Clear the entire log and reset all actor hero points (GM only)
  */
@@ -75,14 +80,8 @@ export async function clearHeroPointsLog() {
   if (!game.user.isGM) return;
   await game.settings.set('ld-hero-pointz', 'heroPointsLog', []);
 
-  // Reset hero points on all actors that have them
   for (const actor of game.actors) {
-    try {
-      await actor.setFlag('ld-hero-pointz', 'heroPoints', 0);
-      await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', false);
-    } catch (e) {
-      console.warn(game.i18n.format('LDHEROEPOINTZ.Messages.LogResetFailed', { name: actor.name }), e);
-    }
+    await resetActorFlags(actor);
   }
 }
 
@@ -95,15 +94,9 @@ export async function clearActorLog(actorId) {
   const filtered = currentLog.filter(entry => entry.actorId !== actorId);
   await game.settings.set('ld-hero-pointz', 'heroPointsLog', filtered);
 
-  // Reset hero points on the actor
   const actor = game.actors.get(actorId);
   if (actor) {
-    try {
-      await actor.setFlag('ld-hero-pointz', 'heroPoints', 0);
-      await actor.setFlag('ld-hero-pointz', 'heroPointsEnabled', false);
-    } catch (e) {
-      console.warn(game.i18n.format('LDHEROEPOINTZ.Messages.LogResetFailed', { name: actor.name }), e);
-    }
+    await resetActorFlags(actor);
   }
 }
 
@@ -114,16 +107,15 @@ export async function clearActorLog(actorId) {
  */
 export async function reduceActorHeroPoints(actorId, amount) {
   if (!game.user.isGM || !amount || amount < 0) return;
-  
+
   const actor = game.actors.get(actorId);
   if (!actor) return;
-  
+
   const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const newPoints = Math.max(0, currentPoints - amount);
-  
+
   await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
-  // Log the reduction
   await logHeroPointSpending(
     actorId,
     actor.name,
@@ -139,25 +131,23 @@ export async function reduceActorHeroPoints(actorId, amount) {
  */
 export function getActorsSummary() {
   const summary = {};
-  
-  // Check all actors
+
   game.actors.forEach(actor => {
     const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints');
     const isEnabled = actor.getFlag('ld-hero-pointz', 'heroPointsEnabled');
-    
-    // Include if they have points or are explicitly enabled
+
     if (heroPoints > 0 || isEnabled) {
       summary[actor.id] = {
         id: actor.id,
         name: actor.name,
         type: actor.type,
-        heroPoints: Math.max(0, heroPoints),
+        heroPoints: Math.max(0, heroPoints || 0),
         isEnabled: isEnabled || false,
         lastSpend: getLatestActorAction(actor.id)
       };
     }
   });
-  
+
   return summary;
 }
 
@@ -175,7 +165,7 @@ function getLatestActorAction(actorId) {
 export function exportLogAsJSON() {
   const log = getHeroPointsLog();
   const summary = getActorsSummary();
-  
+
   return {
     exported: new Date().toISOString(),
     totalEntries: log.length,

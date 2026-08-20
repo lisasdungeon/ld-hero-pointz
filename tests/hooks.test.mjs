@@ -11,7 +11,8 @@ import {
   initializeHeroPoints,
   addGMControls,
   handleGMAction,
-  registerHooks
+  registerHooks,
+  canSpendHeroPoints
 } from '../src/hooks.js';
 import { installMocks, restoreGlobals, makeActor, getHookHandlers } from './foundry-mock.mjs';
 
@@ -103,7 +104,7 @@ test('addHeroPointButtons: early exits and d20/death-save paths', () => {
   content.className = 'message-content';
   html.appendChild(content);
   const clicks = [];
-  // capture listener via patched createElement path — invoke add then fire
+  // capture listener via patched createElement path, then fire
   addHeroPointButtons({
     speaker: { actor: 'p1' },
     rolls: [{ terms: [{ faces: 20 }] }],
@@ -126,9 +127,27 @@ test('addHeroPointButtons: early exits and d20/death-save paths', () => {
   // fire click with and without data-action
   const container = content.children[0];
   container.dispatchEvent({ type: 'click', target: { dataset: {} } });
-  // action present triggers handleHeroPointAction (dialog cancels immediately)
-  globalThis.Dialog = { confirm: async () => false };
+  globalThis.foundry.applications.api.DialogV2.confirm = async () => false;
   container.dispatchEvent({ type: 'click', target: { dataset: { action: 'addD6' } } });
+  container.dispatchEvent({
+    type: 'click',
+    target: { closest: () => ({ dataset: { action: 'addD6' } }) }
+  });
+
+  addHeroPointButtons({
+    speaker: { actor: 'p1' },
+    rolls: [{ terms: [{ faces: 20 }] }],
+    getFlag: () => null
+  }, { querySelector: () => null }, {});
+
+  // second pass does not duplicate buttons
+  addHeroPointButtons({
+    speaker: { actor: 'p1' },
+    rolls: [{ terms: [{ faces: 20 }] }],
+    flavor: 'Attack',
+    getFlag: () => null
+  }, html, {});
+  assert.equal(content.children.length, 1);
 });
 
 test('handleHeroPointAction: no points, cancel, spend addD6 and deathSuccess', async () => {
@@ -145,28 +164,34 @@ test('handleHeroPointAction: no points, cancel, spend addD6 and deathSuccess', a
   installMocks({ actors: [actor2], user: { id: 'gm1', isGM: true } });
   game.settings.register('ld-hero-pointz', 'heroPointsLog', { default: [] });
 
-  globalThis.Dialog.confirm = async () => false;
+  globalThis.foundry.applications.api.DialogV2.confirm = async () => false;
   await handleHeroPointAction(actor2, 'addD6', { flavor: 'Attack' });
   assert.equal(actor2.calls.setFlag.length, 0);
 
-  globalThis.Dialog.confirm = async () => true;
+  globalThis.foundry.applications.api.DialogV2.confirm = async () => true;
   await handleHeroPointAction(actor2, 'addD6', { flavor: 'Attack' });
   assert.ok(actor2.calls.setFlag.some((c) => c.key === 'heroPoints' && c.value === 1));
   assert.ok(game._emitted?.some((e) => e.payload.type === 'spendHeroPoint'));
 
   const actor3 = makeActor({ id: 'a3', flags: { heroPoints: 1 } });
   installMocks({ actors: [actor3], user: { id: 'p1', isGM: false } });
-  globalThis.Dialog.confirm = async () => true;
+  globalThis.foundry.applications.api.DialogV2.confirm = async () => true;
   await handleHeroPointAction(actor3, 'deathSuccess', { flavor: 'Death Saving Throw' });
   assert.ok(actor3.calls.setFlag.some((c) => c.value === 0));
+  assert.ok(actor3.calls.update.length >= 1);
 
   // unknown action after spend still spends points
   const actor4 = makeActor({ id: 'a4', flags: { heroPoints: 1 } });
   installMocks({ actors: [actor4], user: { id: 'gm1', isGM: true } });
   game.settings.register('ld-hero-pointz', 'heroPointsLog', { default: [] });
-  globalThis.Dialog.confirm = async () => true;
+  globalThis.foundry.applications.api.DialogV2.confirm = async () => true;
   await handleHeroPointAction(actor4, 'other', {});
   assert.ok(actor4.calls.setFlag.some((c) => c.value === 0));
+
+  const stranger = makeActor({ id: 's1', flags: { heroPoints: 2 }, isOwner: false });
+  installMocks({ actors: [stranger], user: { id: 'p1', isGM: false } });
+  await handleHeroPointAction(stranger, 'addD6', {});
+  assert.ok(ui._warn?.length >= 1);
 });
 
 test('handleAddD6 and handleDeathSaveSuccess notify and create messages', async () => {
@@ -175,8 +200,21 @@ test('handleAddD6 and handleDeathSaveSuccess notify and create messages', async 
   assert.ok(ui._info?.length >= 1);
 
   await handleAddD6({}, makeActor());
-  await handleDeathSaveSuccess({}, makeActor());
-  assert.ok(ui._info?.length >= 2);
+  const dying = makeActor({ id: 'd1' });
+  await handleDeathSaveSuccess({ rolls: [{ total: 8 }] }, dying);
+  assert.equal(dying.system.attributes.death.failure, 0);
+  assert.equal(dying.system.attributes.death.success, 1);
+
+  const critFail = makeActor({ id: 'd2' });
+  critFail.system.attributes.death.failure = 2;
+  await handleDeathSaveSuccess({ rolls: [{ total: 1 }] }, critFail);
+  assert.equal(critFail.system.attributes.death.failure, 0);
+  assert.equal(critFail.system.attributes.death.success, 1);
+
+  const noUpdate = makeActor({ id: 'd3' });
+  delete noUpdate.update;
+  await handleDeathSaveSuccess({}, noUpdate);
+  assert.ok(ui._info?.length >= 3);
 });
 
 test('initializeHeroPoints respects npc, autoAward, and existing flags', () => {
@@ -186,6 +224,11 @@ test('initializeHeroPoints respects npc, autoAward, and existing flags', () => {
   const npc = makeActor({ type: 'npc' });
   initializeHeroPoints(npc);
   assert.equal(npc.calls.setFlag.length, 0);
+
+  initializeHeroPoints(null);
+  const vehicle = makeActor({ type: 'vehicle' });
+  initializeHeroPoints(vehicle);
+  assert.equal(vehicle.calls.setFlag.length, 0);
 
   game.settings.set('ld-hero-pointz', 'autoAward', false);
   const pc = makeActor();
@@ -221,6 +264,10 @@ test('handleGMAction covers award/subtract/reset/set-zero/default', async () => 
   const before = actor.calls.setFlag.length;
   await handleGMAction(actor, 'unknown', 5, 5);
   assert.equal(actor.calls.setFlag.length, before);
+
+  installMocks({ actors: [actor], user: { id: 'p1', isGM: false } });
+  await handleGMAction(actor, 'award', 3, 5);
+  assert.ok(ui._warn?.length >= 1);
 });
 
 test('addGMControls injects panel and handles clicks', async () => {
@@ -279,7 +326,17 @@ test('addGMControls injects panel and handles clicks', async () => {
   });
 });
 
-test('registerHooks: chat, level-up, sheet, ready, updateActor paths', async () => {
+test('canSpendHeroPoints allows GM or owner only', () => {
+  installMocks({ user: { id: 'gm1', isGM: true } });
+  assert.equal(canSpendHeroPoints(null), false);
+  assert.equal(canSpendHeroPoints(makeActor()), true);
+
+  installMocks({ user: { id: 'p1', isGM: false } });
+  assert.equal(canSpendHeroPoints(makeActor({ isOwner: true })), true);
+  assert.equal(canSpendHeroPoints(makeActor({ isOwner: false })), false);
+});
+
+test('registerHooks: chat, level-up, sheet, ready, createActor paths', async () => {
   const actor = makeActor({ id: 'a1', flags: { heroPoints: 2 }, isOwner: true, level: 2 });
   installMocks({ actors: [actor], user: { id: 'gm1', isGM: true } });
   game.settings.register('ld-hero-pointz', 'autoAward', { default: true });
@@ -351,6 +408,10 @@ test('registerHooks: chat, level-up, sheet, ready, updateActor paths', async () 
   getHookHandlers().get('preUpdateActor').at(-1)(low, { system: { details: { level: 1 } } }, {}, 'u1');
   // preUpdateActor: no level
   getHookHandlers().get('preUpdateActor').at(-1)(low, { name: 'x' }, {}, 'u1');
+  // preUpdateActor: skip npc
+  const npcActor = makeActor({ id: 'n2', type: 'npc', level: 1 });
+  getHookHandlers().get('preUpdateActor').at(-1)(npcActor, { system: { details: { level: 5 } } }, {}, 'u1');
+  getHookHandlers().get('preUpdateActor').at(-1)(null, { system: { details: { level: 5 } } }, {}, 'u1');
 
   // sheet hooks: non-GM skip
   installMocks({ user: { id: 'p1', isGM: false }, actors: [actor] });
@@ -371,6 +432,7 @@ test('registerHooks: chat, level-up, sheet, ready, updateActor paths', async () 
   Object.setPrototypeOf(sheetRoot, HTMLElement.prototype);
   getHookHandlers().get('renderActorSheet5eCharacter2').at(-1)({ actor, element: null }, sheetRoot, {});
   getHookHandlers().get('renderActorSheet5eNPC2').at(-1)({ actor, element: null }, sheetRoot, {});
+  getHookHandlers().get('renderActorSheetV2').at(-1)({ actor, element: null }, sheetRoot, {});
 
   // ready initializes actors
   installMocks({
@@ -381,20 +443,7 @@ test('registerHooks: chat, level-up, sheet, ready, updateActor paths', async () 
   registerHooks();
   getHookHandlers().get('ready').at(-1)();
 
-  // updateActor logs when flag present
-  const logs = [];
-  const origLog = console.log;
-  console.log = (...a) => logs.push(a.join(' '));
-  try {
-    getHookHandlers().get('updateActor').at(-1)(
-      { name: 'Fighter' },
-      { flags: { 'ld-hero-pointz': { heroPoints: 4 } } },
-      {},
-      'u1'
-    );
-    getHookHandlers().get('updateActor').at(-1)({ name: 'Fighter' }, { name: 'x' }, {}, 'u1');
-    assert.ok(logs.some((l) => l.includes('Hero Points updated')));
-  } finally {
-    console.log = origLog;
-  }
+  const created = makeActor({ id: 'new1' });
+  getHookHandlers().get('createActor').at(-1)(created);
+  assert.ok(created.calls.setFlag.some((c) => c.key === 'heroPoints'));
 });

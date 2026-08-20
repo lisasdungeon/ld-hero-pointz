@@ -57,57 +57,77 @@ test('emitSocketMessage: broadcasts {type, ...data} on the canonical channel', a
   assert.deepEqual(emitted[0].payload, { type: 'spendHeroPoint', actorId: 'a1', points: 3 });
 });
 
-test('an inbound updateHeroPoints message applies the flag on other clients and skips the originator', async () => {
-  const setFlagCalls = [];
-  const actor = {
-    id: 'a1',
-    name: 'Fighter',
-    getFlag: () => 2,
-    setFlag: async (moduleId, key, value) => { setFlagCalls.push({ moduleId, key, value }); }
-  };
+test('inbound updateHeroPoints is logged by the GM and does not rewrite actor flags', async () => {
+  const actor = makeActor({ points: 2 });
+  const logSets = [];
   const g = {
-    user: { id: 'receiver', isGM: false },
-    users: { get: () => null },
-    actors: { get: (id) => (id === 'a1' ? actor : null) },
-    socket: { on: (channel, fn) => { g._handler = fn; } },
-    i18n: { localize: (k) => k, format: (k) => k },
-    settings: { get: () => [], set: async () => {} }
-  };
-  await withGame(g, () => registerSocket());
-  await withGame(g, () => g._handler({ type: 'updateHeroPoints', actorId: 'a1', points: 5, userId: 'sender' }));
-  assert.deepEqual(setFlagCalls, [{ moduleId: 'ld-hero-pointz', key: 'heroPoints', value: 5 }]);
-});
-
-test('an inbound message from this same client (the originator) is skipped — already applied locally', async () => {
-  const setFlagCalls = [];
-  const actor = {
-    id: 'a1',
-    getFlag: () => 2,
-    setFlag: async (moduleId, key, value) => { setFlagCalls.push({ moduleId, key, value }); }
-  };
-  const g = {
-    user: { id: 'me', isGM: false },
+    user: { id: 'gm', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
     actors: { get: () => actor },
-    socket: { on: (channel, fn) => { g._handler = fn; } }
+    settings: {
+      get: () => [],
+      set: async (_m, _k, v) => { logSets.push(v); }
+    },
+    i18n: { localize: (k) => k, format: (k) => k }
   };
-  await withGame(g, () => registerSocket());
-  await withGame(g, () => g._handler({ type: 'updateHeroPoints', actorId: 'a1', points: 5, userId: 'me' }));
-  assert.equal(setFlagCalls.length, 0);
+  await withGame(g, () => handleHeroPointsUpdate({
+    actorId: 'a1',
+    points: 5,
+    previous: 2,
+    action: 'award',
+    userId: 'sender'
+  }));
+  assert.equal(actor._flags.heroPoints, 2);
+  assert.equal(logSets.length, 1);
+  assert.equal(logSets[0][0].action, 'award');
+  assert.equal(logSets[0][0].pointsRemaining, 5);
 });
 
-test('a rejected setFlag is caught, not an unhandled rejection', async () => {
+test('inbound update from this same client is skipped', async () => {
+  const actor = makeActor({ points: 2 });
+  const logSets = [];
+  const g = {
+    user: { id: 'me', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
+    actors: { get: () => actor },
+    settings: { get: () => [], set: async (_m, _k, v) => { logSets.push(v); } },
+    i18n: { localize: (k) => k, format: (k) => k }
+  };
+  await withGame(g, () => handleHeroPointsUpdate({
+    actorId: 'a1',
+    points: 5,
+    userId: 'me'
+  }));
+  assert.equal(logSets.length, 0);
+});
+
+test('non-GM clients ignore inbound update and spend messages', async () => {
+  const actor = makeActor({ points: 4 });
+  const g = {
+    user: { id: 'p1', isGM: false },
+    actors: { get: () => actor },
+    settings: { get: () => [], set: async () => { throw new Error('should not write'); } }
+  };
+  await withGame(g, () => handleHeroPointsUpdate({ actorId: 'a1', points: 9, userId: 'other' }));
+  await withGame(g, () => handleHeroPointSpend({ actorId: 'a1', points: 1, userId: 'other' }));
+  assert.equal(actor._flags.heroPoints, 4);
+});
+
+test('a rejected log write is caught, not an unhandled rejection', async () => {
   const warnings = [];
   const originalWarn = console.warn;
   console.warn = (...args) => warnings.push(args);
 
-  const actor = {
-    id: 'a1',
-    getFlag: () => 2,
-    setFlag: async () => { throw new Error('not owner'); }
-  };
+  const actor = makeActor({ points: 2 });
   const g = {
-    user: { id: 'receiver', isGM: false },
+    user: { id: 'gm', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
     actors: { get: () => actor },
+    settings: {
+      get: () => [],
+      set: async () => { throw new Error('cannot write log'); }
+    },
+    i18n: { localize: (k) => k, format: (k) => k },
     socket: { on: (channel, fn) => { g._handler = fn; } }
   };
 
@@ -130,38 +150,36 @@ test('a rejected setFlag is caught, not an unhandled rejection', async () => {
 
 test('an unrecognized actorId in an inbound message is a no-op, not a throw', async () => {
   const g = {
-    user: { id: 'receiver' },
-    actors: { get: () => null },
-    socket: { on: (channel, fn) => { g._handler = fn; } }
+    user: { id: 'gm', isGM: true },
+    actors: { get: () => null }
   };
-  await withGame(g, () => registerSocket());
-  await assert.doesNotReject(() => withGame(g, () => g._handler({ type: 'updateHeroPoints', actorId: 'missing', points: 5, userId: 'sender' })));
+  await assert.doesNotReject(() => withGame(g, () => handleHeroPointsUpdate({
+    actorId: 'missing',
+    points: 5,
+    userId: 'sender'
+  })));
 });
 
-test('handleHeroPointsUpdate logs when the receiver is GM', async () => {
+test('handleHeroPointsUpdate uses remainingFrom fallback when points is not an integer', async () => {
   const actor = makeActor({ points: 4 });
   const logSets = [];
   const g = {
     user: { id: 'gm', isGM: true },
     users: { get: () => ({ name: 'GM' }) },
     actors: { get: () => actor },
-    settings: {
-      get: () => [],
-      set: async (_m, _k, v) => { logSets.push(v); }
-    },
+    settings: { get: () => [], set: async (_m, _k, v) => { logSets.push(v); } },
     i18n: { localize: (k) => k, format: (k) => k }
   };
   await withGame(g, () => handleHeroPointsUpdate({
     actorId: 'a1',
-    points: 6,
+    points: 'x',
     userId: 'other'
   }));
-  assert.equal(actor._flags.heroPoints, 6);
-  assert.equal(logSets.length, 1);
+  assert.equal(logSets[0][0].pointsRemaining, 3);
   assert.equal(logSets[0][0].action, 'awarded');
 });
 
-test('handleHeroPointSpend applies integer points, falls back when non-integer, logs for GM', async () => {
+test('handleHeroPointSpend logs for GM using integer points or a minus-one fallback', async () => {
   const actor = makeActor({ points: 5 });
   const logSets = [];
   const g = {
@@ -181,48 +199,52 @@ test('handleHeroPointSpend applies integer points, falls back when non-integer, 
     action: 'addD6',
     userId: 'player1'
   }));
-  assert.equal(actor._flags.heroPoints, 3);
   assert.equal(logSets[0][0].action, 'addD6');
+  assert.equal(logSets[0][0].pointsSpent, 1);
 
   await withGame(g, () => handleHeroPointSpend({
     actorId: 'a1',
     points: 'x',
     userId: 'player1'
   }));
-  assert.equal(actor._flags.heroPoints, 2);
   assert.equal(logSets[1][0].action, 'spent');
+  assert.equal(logSets[1][0].pointsRemaining, 4);
 });
 
 test('handleHeroPointSpend skips originator and missing actors', async () => {
   const actor = makeActor({ points: 5 });
   const g = {
-    user: { id: 'me', isGM: false },
-    actors: { get: (id) => (id === 'a1' ? actor : null) }
+    user: { id: 'me', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
+    actors: { get: (id) => (id === 'a1' ? actor : null) },
+    settings: { get: () => [], set: async () => { throw new Error('no'); } },
+    i18n: { localize: (k) => k, format: (k) => k }
   };
   await withGame(g, () => handleHeroPointSpend({ actorId: 'a1', points: 1, userId: 'me' }));
-  assert.equal(actor._flags.heroPoints, 5);
-
   await withGame(g, () => handleHeroPointSpend({ actorId: 'missing', points: 1, userId: 'other' }));
 });
 
-test('handleSocketMessage routes spend path and ignores unknown types; spend failures are caught', async () => {
+test('handleSocketMessage routes spend path, ignores empty/unknown types, and catches spend failures', async () => {
   const warnings = [];
   const originalWarn = console.warn;
   console.warn = (...args) => warnings.push(args);
 
-  const actor = {
-    id: 'a1',
-    name: 'Fighter',
-    getFlag: () => 2,
-    setFlag: async () => { throw new Error('fail spend'); }
-  };
+  const actor = makeActor({ points: 2 });
   const g = {
-    user: { id: 'receiver', isGM: false },
-    actors: { get: () => actor }
+    user: { id: 'gm', isGM: true },
+    users: { get: () => ({ name: 'GM' }) },
+    actors: { get: () => actor },
+    settings: {
+      get: () => [],
+      set: async () => { throw new Error('fail spend'); }
+    },
+    i18n: { localize: (k) => k, format: (k) => k }
   };
 
   try {
     await withGame(g, () => {
+      handleSocketMessage(null);
+      handleSocketMessage({});
       handleSocketMessage({ type: 'unknown' });
       handleSocketMessage({ type: 'spendHeroPoint', actorId: 'a1', points: 1, userId: 'sender' });
     });

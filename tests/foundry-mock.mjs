@@ -81,7 +81,8 @@ function createElement(tag) {
         const cls = sel.slice(1);
         const out = [];
         const walk = (node) => {
-          if ((node.className || '').includes(cls) || node.className === cls) out.push(node);
+          const name = node.className || '';
+          if (name === cls || name.includes(cls) || name.split(/\s+/).includes(cls)) out.push(node);
           for (const c of node.children || []) walk(c);
         };
         walk(el);
@@ -103,6 +104,7 @@ function createElement(tag) {
     },
     closest(sel) {
       if (sel === 'button' && el.tagName === 'BUTTON') return el;
+      if (sel === '[data-action]' && el.dataset?.action) return el;
       return null;
     },
     setAttribute(name, value) {
@@ -234,9 +236,14 @@ export function installMocks(options = {}) {
 
   const HandlebarsApplicationMixin = (Base) => class extends Base {};
 
+  const DialogV2 = {
+    confirm: async () => true,
+    input: async () => ({ amount: '1' })
+  };
+
   globalThis.foundry = {
     applications: {
-      api: { ApplicationV2, HandlebarsApplicationMixin }
+      api: { ApplicationV2, HandlebarsApplicationMixin, DialogV2 }
     },
     utils: {
       randomID: () => `id-${Math.random().toString(36).slice(2, 9)}`,
@@ -331,14 +338,26 @@ export function makeActor({
     isOwner,
     uuid: `Actor.${id}`,
     documentName: 'Actor',
-    system: { details: { level } },
-    calls: { setFlag: [] },
+    calls: { setFlag: [], update: [] },
+    system: {
+      details: { level },
+      attributes: { death: { success: 0, failure: 1 } }
+    },
     getFlag(moduleId, key) {
       return flagStore[moduleId]?.[key];
     },
     async setFlag(moduleId, key, value) {
       this.calls.setFlag.push({ moduleId, key, value });
       flagStore[moduleId] = { ...flagStore[moduleId], [key]: value };
+    },
+    async update(data) {
+      this.calls.update.push(data);
+      if (data['system.attributes.death.failure'] != null) {
+        this.system.attributes.death.failure = data['system.attributes.death.failure'];
+      }
+      if (data['system.attributes.death.success'] != null) {
+        this.system.attributes.death.success = data['system.attributes.death.success'];
+      }
     }
   };
 }

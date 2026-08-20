@@ -4,7 +4,7 @@ D&D 5e hero point management for Foundry VTT with GM controls, synchronized play
 
 ## Module details
 
-- Version: `1.3.11`
+- Version: `1.3.14`
 - Compatibility: Foundry VTT `13+` (verified `14`)
 - Game System: D&D 5e / D&D 2024
 - Distribution: Premium Patreon-gated module
@@ -15,7 +15,7 @@ D&D 5e hero point management for Foundry VTT with GM controls, synchronized play
 - GM management window for awarding hero points to a targeted actor
 - Actor sheet controls for awarding, subtracting, resetting, or zeroing points
 - Player-facing chat actions for eligible d20 rolls and death saves
-- Socket-based synchronization across connected clients
+- Socket-based activity logging across connected clients
 - Activity log viewer with export, actor filtering, log clearing, and point reduction
 - NPC support through explicit enable/disable actions
 - Uncapped hero point awards with level-up refreshes that never reduce an existing total
@@ -48,10 +48,14 @@ https://github.com/lisasdungeon/ld-hero-pointz/releases/latest/download/module.j
 3. Confirm the spend.
 4. The point total updates for everyone immediately.
 
+Death save spends also update the actor's death success and failure counts. A natural 1 undoes both failures from that throw.
+
 ## Support
 
 - Patreon: https://patreon.com/LisasDungeon
 - Issues: https://github.com/lisasdungeon/ld-hero-pointz/issues
+- Discord: MystryssLysa
+- Email: Lisasdungeon@gmail.com
 
 ## Notes
 

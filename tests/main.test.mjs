@@ -10,10 +10,7 @@ test('LdHeroPointzModule.init registers settings, hooks, and socket', async () =
 
   LdHeroPointzModule.init();
 
-  assert.ok(game.settings.get('ld-hero-pointz', 'autoAward') === true ||
-    game.settings.get('ld-hero-pointz', 'autoAward') === undefined ||
-    true);
-  // settings were registered
+  assert.equal(game.settings.get('ld-hero-pointz', 'autoAward'), true);
   assert.ok(Hooks._handlers.size > 0);
   assert.equal(typeof game._socketHandler, 'function');
 });

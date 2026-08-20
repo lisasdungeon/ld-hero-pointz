@@ -1,5 +1,6 @@
 /**
- * Socket communication for LD Hero Pointz
+ * Copyright 2026 Lisa's Dungeon
+ * Socket routing for GM activity logging. Actor flags sync through Foundry.
  */
 import { logHeroPointSpending } from './logger.js';
 
@@ -13,15 +14,17 @@ export function registerSocket() {
  * Handle incoming socket messages
  */
 export function handleSocketMessage(data) {
+  if (!data || !data.type) return;
+
   switch (data.type) {
     case 'updateHeroPoints':
       handleHeroPointsUpdate(data).catch((err) => {
-        console.warn('LD Hero Pointz | Failed to apply hero point update from socket:', err);
+        console.warn('LD Hero Pointz | Failed to log hero point update from socket:', err);
       });
       break;
     case 'spendHeroPoint':
       handleHeroPointSpend(data).catch((err) => {
-        console.warn('LD Hero Pointz | Failed to apply hero point spend from socket:', err);
+        console.warn('LD Hero Pointz | Failed to log hero point spend from socket:', err);
       });
       break;
     default:
@@ -39,62 +42,56 @@ export function emitSocketMessage(type, data) {
   });
 }
 
-/**
- * Handle Hero Points update from socket
- */
-export async function handleHeroPointsUpdate(data) {
-  const actor = game.actors.get(data.actorId);
-  if (!actor) return;
-
-  const oldPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
-  const newPoints = data.points;
-
-  if (data.userId === game.user.id) {
-    // Originator already updated locally
-    return;
-  }
-
-  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
-
-  // Log the update
-  if (game.user.isGM) {
-    await logHeroPointSpending(
-      data.actorId,
-      actor.name,
-      Math.max(0, oldPoints - newPoints),
-      newPoints,
-      'awarded',
-      data.userId
-    );
-  }
+function remainingFrom(data, oldPoints) {
+  if (Number.isInteger(data.points)) return data.points;
+  return Math.max(oldPoints - 1, 0);
 }
 
 /**
- * Handle Hero Point spend from socket
+ * GM-only activity log for awards and sheet changes made on another client.
+ * Does not write actor flags. Foundry already synced the document.
  */
-export async function handleHeroPointSpend(data) {
+export async function handleHeroPointsUpdate(data) {
+  if (!data || data.userId === game.user.id) return;
+  if (!game.user.isGM) return;
+
   const actor = game.actors.get(data.actorId);
   if (!actor) return;
 
-  if (data.userId === game.user.id) {
-    // Avoid sender double-applying
-    return;
-  }
+  const oldPoints = Number.isFinite(data.previous)
+    ? data.previous
+    : (actor.getFlag('ld-hero-pointz', 'heroPoints') || 0);
+  const newPoints = remainingFrom(data, oldPoints);
+
+  await logHeroPointSpending(
+    data.actorId,
+    actor.name,
+    Math.abs(oldPoints - newPoints),
+    newPoints,
+    data.action || 'awarded',
+    data.userId
+  );
+}
+
+/**
+ * GM-only activity log for a spend that another client already applied.
+ */
+export async function handleHeroPointSpend(data) {
+  if (!data || data.userId === game.user.id) return;
+  if (!game.user.isGM) return;
+
+  const actor = game.actors.get(data.actorId);
+  if (!actor) return;
 
   const oldPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
-  const newPoints = Number.isInteger(data.points) ? data.points : Math.max(oldPoints - 1, 0);
+  const newPoints = remainingFrom(data, oldPoints);
 
-  await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
-
-  // Log the spending (GM only)
-  if (game.user.isGM) {
-    await logHeroPointSpending(
-      data.actorId,
-      actor.name,
-      oldPoints - newPoints,
-      newPoints,
-      data.action || 'spent',
-      data.userId
-    );
-  }
+  await logHeroPointSpending(
+    data.actorId,
+    actor.name,
+    1,
+    newPoints,
+    data.action || 'spent',
+    data.userId
+  );
 }

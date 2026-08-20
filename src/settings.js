@@ -1,11 +1,11 @@
 /**
- * Settings registration for LD Hero Pointz.
- * Management and log-viewer Application classes load only when a menu is opened.
+ * Copyright 2026 Lisa's Dungeon
+ * Settings registration. Management and log-viewer classes load when a menu opens.
  */
 
 /**
  * Thin menu shell used by game.settings.registerMenu. Foundry only needs
- * construct + render; the real ApplicationV2 class is dynamic-imported then.
+ * construct + render. The real ApplicationV2 class is imported then.
  */
 function createLazyMenu(loader) {
   return class LazyMenu {
@@ -22,7 +22,7 @@ function createLazyMenu(loader) {
 }
 
 export function registerSettings() {
-  game.settings.registerMenu('ld-hero-pointz', 'reservesMenu', {
+  game.settings.registerMenu('ld-hero-pointz', 'managementMenu', {
     name: 'LDHEROEPOINTZ.Menu.ManagementName',
     label: 'LDHEROEPOINTZ.Menu.ManagementLabel',
     hint: 'LDHEROEPOINTZ.Menu.ManagementHint',

@@ -1,11 +1,24 @@
 # Changelog
 
+## 1.3.14
+
+- Fixed the actor sheet header still showing "Reserves" instead of "Hero Points"
+- Spending a hero point on a death save now updates the actor's success and failure counts. A natural 1 undoes both failures from that throw.
+- GM sheet award, subtract, reset, and zero actions are now written to the activity log
+- Socket messages no longer rewrite actor flags on every client. Foundry already syncs the document, and the extra write could overwrite a newer total.
+- New characters created after world load now receive their starting hero points
+- Chat hero point buttons no longer duplicate if a message re-renders
+- Activity log actor filter no longer hides the summary action buttons
+- Management and log windows use DialogV2 and localized titles
+- LICENSE is included in the release zip
+- README version and support contacts match the manifest
+
 ## 1.3.13
 
-- Compliance and hardening release: sole Lisa's Dungeon authorship and contact fields (Discord MystryssLysa, email Lisasdungeon@gmail.com, Patreon LisasDungeon); lazy loading / trigger-based startup where needed; 500 LOC file cap; full source line coverage; no emoji or AI references in the shipped package.
-- Compliance pass: sole author Lisa's Dungeon with Discord MystryssLysa / email Lisasdungeon@gmail.com / Patreon LisasDungeon; enforce 500 LOC file cap; remove non-compliant branding and symbols where present.
-- Lazy-load management and log-viewer Application classes from settings menus (dynamic import on open); entry point no longer eagerly imports heavy UI.
-- Full line coverage on all source files under `src/` (hooks, socket, logger, settings, main, apps).
+- Sole author Lisa's Dungeon with Discord MystryssLysa, email Lisasdungeon@gmail.com, and Patreon LisasDungeon
+- Lazy-load management and log-viewer Application classes from settings menus
+- Keep source files under the 500 line cap
+- Full line coverage on all source files under `src/`
 
 ## 1.3.12
 

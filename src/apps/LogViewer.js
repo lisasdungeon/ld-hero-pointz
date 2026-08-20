@@ -1,24 +1,19 @@
 /**
- * LD Hero Pointz Log Viewer Application
- * Displays hero point spending history to the GM
+ * Copyright 2026 Lisa's Dungeon
+ * GM activity log for hero point awards and spends.
  */
 import { getHeroPointsLog, getActorsSummary, clearHeroPointsLog, clearActorLog, reduceActorHeroPoints } from '../logger.js';
+import { confirmAction, promptAmount } from '../utils/dialog.js';
+import { escapeHtml } from '../utils/html.js';
 
 export class LdHeroPointzLogViewer extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
-  static _getDialogRoot(html) {
-    if (html instanceof HTMLElement) return html;
-    if (html?.[0] instanceof HTMLElement) return html[0];
-    if (html?.element instanceof HTMLElement) return html.element;
-    if (html?.element?.[0] instanceof HTMLElement) return html.element[0];
-    return null;
-  }
-
   static DEFAULT_OPTIONS = {
     id: 'ld-hero-pointz-log-viewer',
+    classes: ['ld-hero-pointz-log-viewer-app'],
     tag: 'div',
     window: {
       icon: 'fas fa-book',
-      title: 'LD Hero Pointz - Activity Log',
+      title: 'LDHEROEPOINTZ.Log.Title',
       resizable: true,
       minimizeable: true
     },
@@ -54,89 +49,70 @@ export class LdHeroPointzLogViewer extends foundry.applications.api.HandlebarsAp
       const htmlEl = htmlElement instanceof HTMLElement ? htmlElement : htmlElement[0];
       const form = htmlEl.querySelector('.ld-hero-pointz-log-viewer') || htmlEl;
 
-      // Export button
       form.querySelector('.ld-hero-pointz-export-log')?.addEventListener('click', () => {
         this._exportLog();
       });
 
-      // Clear log button
       form.querySelector('.ld-hero-pointz-clear-all-log')?.addEventListener('click', async () => {
-        const confirmed = await Dialog.confirm({
-          title: game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllConfirmTitle'),
-          content: game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllConfirm')
-        });
+        const confirmed = await confirmAction(
+          game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllConfirmTitle'),
+          `<p>${game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllConfirm')}</p>`
+        );
 
         if (confirmed) {
           await clearHeroPointsLog();
           ui.notifications.info(game.i18n.localize('LDHEROEPOINTZ.Log.ClearAllSuccess'));
-          this.render(true);
+          this.render({ force: true });
         }
       });
 
-      // Clear actor log buttons
       form.querySelectorAll('.ld-hero-pointz-clear-actor-log').forEach(btn => {
         btn.addEventListener('click', async (event) => {
           const actorId = event.currentTarget.dataset.actorId;
           const actorName = event.currentTarget.dataset.actorName;
-          
-          const confirmed = await Dialog.confirm({
-            title: game.i18n.localize('LDHEROEPOINTZ.Log.ClearActorConfirmTitle'),
-            content: game.i18n.format('LDHEROEPOINTZ.Log.ClearActorConfirm', { actorName })
-          });
+          const safeName = escapeHtml(actorName);
+
+          const confirmed = await confirmAction(
+            game.i18n.localize('LDHEROEPOINTZ.Log.ClearActorConfirmTitle'),
+            `<p>${game.i18n.format('LDHEROEPOINTZ.Log.ClearActorConfirm', { actorName: safeName })}</p>`
+          );
 
           if (confirmed) {
             await clearActorLog(actorId);
             ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Log.ClearActorSuccess', { actorName }));
-            this.render(true);
+            this.render({ force: true });
           }
         });
       });
 
-      // Reduce actor hero points buttons
       form.querySelectorAll('.ld-hero-pointz-reduce-actor-points').forEach(btn => {
         btn.addEventListener('click', async (event) => {
           const actorId = event.currentTarget.dataset.actorId;
           const actorName = event.currentTarget.dataset.actorName;
-          const currentPoints = parseInt(event.currentTarget.dataset.currentPoints) || 0;
-          
-          const dialog = new Dialog({
-            title: game.i18n.format('LDHEROEPOINTZ.Log.ReduceTitle', { actorName }),
-            content: `<form><div class="form-group"><label>${game.i18n.format('LDHEROEPOINTZ.Log.CurrentPointsLabel', { points: currentPoints })}</label></div><div class="form-group"><label>${game.i18n.localize('LDHEROEPOINTZ.Log.ReduceBy')}</label><input type="number" id="reduce-amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`,
-            buttons: {
-              reduce: {
-                label: game.i18n.localize('LDHEROEPOINTZ.Log.ReduceButton'),
-                callback: async (html) => {
-                  const dialogRoot = LdHeroPointzLogViewer._getDialogRoot(html);
-                  const amountInput = dialogRoot?.querySelector('#reduce-amount');
-                  const amount = Number.parseInt(amountInput?.value ?? '1', 10) || 1;
+          const currentPoints = parseInt(event.currentTarget.dataset.currentPoints, 10) || 0;
 
-                  if (!amountInput) {
-                    ui.notifications.error(game.i18n.localize('LDHEROEPOINTZ.Log.ReduceReadError'));
-                    return;
-                  }
+          const amount = await promptAmount(
+            game.i18n.format('LDHEROEPOINTZ.Log.ReduceTitle', { actorName: escapeHtml(actorName) }),
+            `<form><div class="form-group"><label>${game.i18n.format('LDHEROEPOINTZ.Log.CurrentPointsLabel', { points: currentPoints })}</label></div><div class="form-group"><label>${game.i18n.localize('LDHEROEPOINTZ.Log.ReduceBy')}</label><input type="number" name="amount" min="1" max="${currentPoints}" value="1" style="width:100%"/></div></form>`
+          );
 
-                  if (amount > 0 && amount <= currentPoints) {
-                    await reduceActorHeroPoints(actorId, amount);
-                    ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Log.ReduceSuccess', { amount, actorName }));
-                    this.render(true);
-                  }
-                }
-              },
-              cancel: {
-                label: game.i18n.localize('LDHEROEPOINTZ.Log.CancelButton')
-              }
-            },
-            default: 'reduce'
-          });
-          dialog.render(true);
+          if (amount == null) {
+            ui.notifications.error(game.i18n.localize('LDHEROEPOINTZ.Log.ReduceReadError'));
+            return;
+          }
+
+          if (amount > 0 && amount <= currentPoints) {
+            await reduceActorHeroPoints(actorId, amount);
+            ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Log.ReduceSuccess', { amount, actorName }));
+            this.render({ force: true });
+          }
         });
       });
 
-      // Filter by actor
       form.querySelector('.ld-hero-pointz-filter-actor')?.addEventListener('change', (event) => {
         const actorId = event.target.value;
-        const entries = form.querySelectorAll('[data-actor-id]');
-        
+        const entries = form.querySelectorAll('.log-entry');
+
         entries.forEach(entry => {
           if (!actorId || entry.dataset.actorId === actorId) {
             entry.style.display = '';
@@ -151,7 +127,7 @@ export class LdHeroPointzLogViewer extends foundry.applications.api.HandlebarsAp
   _exportLog() {
     const log = getHeroPointsLog();
     const summary = getActorsSummary();
-    
+
     const exportData = {
       exported: new Date().toISOString(),
       summary: Object.values(summary),
@@ -159,8 +135,8 @@ export class LdHeroPointzLogViewer extends foundry.applications.api.HandlebarsAp
     };
 
     const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
     const link = document.createElement('a');
     link.setAttribute('href', dataUri);
     link.setAttribute('download', `ld-hero-pointz-log-${new Date().toISOString().split('T')[0]}.json`);

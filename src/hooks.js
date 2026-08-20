@@ -1,5 +1,18 @@
+/**
+ * Copyright 2026 Lisa's Dungeon
+ * Chat buttons, level-up refresh, and GM actor-sheet controls.
+ */
 import { emitSocketMessage } from './socket.js';
 import { logHeroPointSpending } from './logger.js';
+import { confirmAction } from './utils/dialog.js';
+import { escapeHtml } from './utils/html.js';
+
+const SHEET_HOOKS = [
+  'renderActorSheet5eCharacter2',
+  'renderActorSheet5eNPC2',
+  'renderActorSheet5e',
+  'renderActorSheetV2'
+];
 
 /**
  * Get actor from chat message
@@ -17,23 +30,27 @@ export function getActorFromMessage(message) {
   return null;
 }
 
+function resolveMount(html) {
+  const root = toElement(html) ?? html;
+  if (!root) return null;
+  const messageContent = root.querySelector?.('.message-content');
+  return messageContent || root;
+}
+
 /**
  * Add Hero Point buttons to chat messages
  */
 export function addHeroPointButtons(message, html, data) {
-  // Only add if actor has Hero Points
   if (!html || !message) return;
 
   const actor = getActorFromMessage(message);
   if (!actor) return;
 
-  // Skip NPCs unless explicitly enabled
   if (actor.type === 'npc' && !actor.getFlag('ld-hero-pointz', 'heroPointsEnabled')) return;
 
   const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   if (heroPoints <= 0) return;
 
-  // Determine if this is a d20 roll or a death save
   const roll = message.rolls?.[0];
   const isD20 = roll?.terms?.[0]?.faces === 20;
   const isDeathSave = message.getFlag?.('dnd5e', 'roll')?.type === 'death' ||
@@ -41,15 +58,18 @@ export function addHeroPointButtons(message, html, data) {
 
   if (!isD20 && !isDeathSave) return;
 
-  // Create button container
+  const mount = resolveMount(html);
+  if (!mount?.appendChild) return;
+  if (mount.querySelector?.('.ld-hero-pointz-buttons')) return;
+
   const buttonContainer = document.createElement('div');
   buttonContainer.className = 'ld-hero-pointz-buttons';
 
   let actionsHtml = '';
   if (isDeathSave) {
-    actionsHtml = `<button class="ld-hero-pointz-btn" data-action="deathSuccess">${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSuccess')}</button>`;
+    actionsHtml = `<button type="button" class="ld-hero-pointz-btn" data-action="deathSuccess">${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSuccess')}</button>`;
   } else if (isD20) {
-    actionsHtml = `<button class="ld-hero-pointz-btn" data-action="addD6">${game.i18n.localize('LDHEROEPOINTZ.Chat.AddD6')}</button>`;
+    actionsHtml = `<button type="button" class="ld-hero-pointz-btn" data-action="addD6">${game.i18n.localize('LDHEROEPOINTZ.Chat.AddD6')}</button>`;
   }
 
   buttonContainer.innerHTML = `
@@ -61,17 +81,11 @@ export function addHeroPointButtons(message, html, data) {
     </div>
   `;
 
-  // Add to chat message
-  const messageContent = html.querySelector?.('.message-content');
-  if (messageContent) {
-    messageContent.appendChild(buttonContainer);
-  } else {
-    html.appendChild(buttonContainer);
-  }
+  mount.appendChild(buttonContainer);
 
-  // Add event listeners
   buttonContainer.addEventListener('click', (event) => {
-    const action = event.target.dataset.action;
+    const action = event.target?.closest?.('[data-action]')?.dataset?.action
+      ?? event.target?.dataset?.action;
     if (action) {
       handleHeroPointAction(actor, action, message);
     }
@@ -86,39 +100,44 @@ export function getHeroPointBaseline(level = 1) {
   return 5 + Math.floor(level / 2);
 }
 
+export function canSpendHeroPoints(actor) {
+  if (!actor) return false;
+  if (game.user.isGM) return true;
+  return Boolean(actor.isOwner);
+}
+
 /**
  * Handle Hero Point spending actions
  */
 export async function handleHeroPointAction(actor, action, message) {
+  if (!canSpendHeroPoints(actor)) {
+    ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Chat.NotOwner'));
+    return;
+  }
+
   const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   if (heroPoints <= 0) {
     ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Chat.NoPoints'));
     return;
   }
 
-  // Confirm spending
   const content = action === 'deathSuccess'
     ? game.i18n.localize('LDHEROEPOINTZ.Chat.SpendDeathSave')
     : game.i18n.localize('LDHEROEPOINTZ.Chat.SpendAddD6');
 
-  const confirmed = await Dialog.confirm({
-    title: game.i18n.localize('LDHEROEPOINTZ.Chat.SpendTitle'),
-    content: content
-  });
+  const confirmed = await confirmAction(
+    game.i18n.localize('LDHEROEPOINTZ.Chat.SpendTitle'),
+    `<p>${content}</p>`
+  );
 
   if (!confirmed) return;
 
-  // Re-read the current value now that the dialog has resolved — anything
-  // could have changed the flag while the GM/player was looking at the
-  // confirmation prompt, and spending against the pre-dialog value would
-  // silently clobber that change.
   const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
   const newPoints = Math.max(currentPoints - 1, 0);
   await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
-  // Log the spending (local client can still log if GM)
+  const actionLabel = action === 'deathSuccess' ? 'Death Save Success' : 'Add 1d6';
   if (game.user.isGM) {
-    const actionLabel = action === 'deathSuccess' ? 'Death Save Success' : 'Add 1d6';
     await logHeroPointSpending(
       actor.id,
       actor.name,
@@ -128,7 +147,6 @@ export async function handleHeroPointAction(actor, action, message) {
     );
   }
 
-  // Emit socket to sync to other clients
   emitSocketMessage('spendHeroPoint', {
     actorId: actor.id,
     points: newPoints,
@@ -136,7 +154,6 @@ export async function handleHeroPointAction(actor, action, message) {
     userId: game.user.id
   });
 
-  // Apply the action
   switch (action) {
     case 'addD6':
       await handleAddD6(message, actor);
@@ -165,10 +182,27 @@ export async function handleAddD6(message, actor) {
   ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Chat.AddD6Success', { bonus: totalBonus }));
 }
 
+function deathFailuresToUndo(message, currentFail) {
+  const rollTotal = Number(message?.rolls?.[0]?.total);
+  const undo = rollTotal === 1 ? 2 : 1;
+  return Math.min(undo, currentFail);
+}
+
 /**
  * Handle Death Save automatic success
  */
 export async function handleDeathSaveSuccess(message, actor) {
+  const death = actor.system?.attributes?.death ?? {};
+  const currentFail = Number(death.failure) || 0;
+  const currentSuccess = Number(death.success) || 0;
+
+  if (typeof actor.update === 'function') {
+    await actor.update({
+      'system.attributes.death.failure': Math.max(0, currentFail - deathFailuresToUndo(message, currentFail)),
+      'system.attributes.death.success': Math.min(3, currentSuccess + 1)
+    });
+  }
+
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<div class="dnd5e chat-card"><header class="card-header"><h3>${game.i18n.localize('LDHEROEPOINTZ.Chat.DeathSaveTitle')}</h3></header>
@@ -180,42 +214,33 @@ export async function handleDeathSaveSuccess(message, actor) {
 }
 
 export function registerHooks() {
-  // Add buttons to chat messages
   Hooks.on('renderChatMessageHTML', (message, html, data) => {
     if (!game || !game.users) return;
 
-    // GM always sees, players only if they have points
     if (!game.user.isGM) {
       const actor = getActorFromMessage(message);
       if (!actor) return;
-
-      // Verify the user is the owner/controller of this actor
       if (!actor.isOwner) return;
-
       const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
       if (heroPoints <= 0) return;
     }
     addHeroPointButtons(message, html, data);
   });
 
-  // Level-up detection and refresh
   Hooks.on('preUpdateActor', (actor, updateData, options, userId) => {
-    // Respect the autoAward setting
     if (!game.settings.get('ld-hero-pointz', 'autoAward')) return;
+    if (!actor || actor.type !== 'character') return;
 
     const newLevel = foundry.utils.getProperty(updateData, 'system.details.level');
     if (newLevel !== undefined) {
       const oldLevel = actor.system.details?.level || 1;
       if (newLevel > oldLevel) {
-        // Character leveled up!
         const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
         const baselinePoints = getHeroPointBaseline(newLevel);
         const refreshedPoints = Math.max(currentPoints, baselinePoints);
 
-        // Refresh up to the level baseline without removing any excess points.
         foundry.utils.setProperty(updateData, 'flags.ld-hero-pointz.heroPoints', refreshedPoints);
 
-        // Notify the user
         ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.LeveledUp', {
           name: actor.name,
           level: newLevel,
@@ -225,34 +250,21 @@ export function registerHooks() {
     }
   });
 
-  // Add GM controls to actor sheets. dnd5e's 2024-rules character/NPC sheets
-  // are ApplicationV2-based and fire renderActorSheet5eCharacter2 /
-  // renderActorSheet5eNPC2, not the legacy V1 renderActorSheet5e — register
-  // for both the modern names and the legacy one so this keeps working on
-  // whichever sheet class actually renders. addGMControls itself guards
-  // against double-injection, so it's safe if more than one of these fires
-  // for the same render.
-  for (const hookName of ['renderActorSheet5eCharacter2', 'renderActorSheet5eNPC2', 'renderActorSheet5e']) {
+  for (const hookName of SHEET_HOOKS) {
     Hooks.on(hookName, (sheet, html, data) => {
       if (!game.user.isGM) return;
       addGMControls(sheet, html, data);
     });
   }
 
-  // Initialize Hero Points on actors
   Hooks.on('ready', () => {
-    // Ensure all actors have Hero Points initialized according to 2024 rules
     game.actors.forEach(actor => {
       initializeHeroPoints(actor);
     });
   });
 
-  // Sync Hero Points when actor updates
-  Hooks.on('updateActor', (actor, data, options, userId) => {
-    if (foundry.utils.hasProperty(data, 'flags.ld-hero-pointz.heroPoints')) {
-      const points = foundry.utils.getProperty(data, 'flags.ld-hero-pointz.heroPoints');
-      console.log(`LD Hero Pointz | Actor ${actor.name} Hero Points updated to: ${points}`);
-    }
+  Hooks.on('createActor', (actor) => {
+    initializeHeroPoints(actor);
   });
 }
 
@@ -260,17 +272,14 @@ export function registerHooks() {
  * Initialize Hero Points on an actor according to 2024 rules
  */
 export function initializeHeroPoints(actor) {
-  // Skip NPCs — they must be explicitly enabled via the API
-  if (actor.type === 'npc') return;
+  if (!actor || actor.type !== 'character') return;
 
-  // Respect the autoAward setting
   if (!game.settings.get('ld-hero-pointz', 'autoAward')) return;
 
   const currentPoints = actor.getFlag('ld-hero-pointz', 'heroPoints');
   if (currentPoints === undefined) {
     const level = actor.system.details?.level || 1;
-    const initialPoints = 5 + Math.floor(level / 2);
-    actor.setFlag('ld-hero-pointz', 'heroPoints', initialPoints);
+    actor.setFlag('ld-hero-pointz', 'heroPoints', getHeroPointBaseline(level));
   }
 }
 
@@ -291,17 +300,12 @@ export function toElement(html) {
 export function addGMControls(sheet, html, data) {
   const actor = sheet.actor;
 
-  // Skip NPCs unless explicitly enabled
   if (actor.type === 'npc' && !actor.getFlag('ld-hero-pointz', 'heroPointsEnabled')) return;
 
   const root = toElement(html) ?? sheet.element ?? null;
   const header = root?.querySelector?.('.window-header');
   if (!header) return;
 
-  // Multiple hook names can fire for the same render (see registerHooks) and
-  // Foundry can re-render a sheet without a full close/reopen cycle, so drop
-  // any panel already injected before adding a fresh one instead of stacking
-  // duplicates.
   header.querySelector('.ld-hero-pointz-gm-controls')?.remove();
 
   const heroPoints = actor.getFlag('ld-hero-pointz', 'heroPoints') || 0;
@@ -338,6 +342,11 @@ export function addGMControls(sheet, html, data) {
  * Handle GM actions for awarding/resetting Hero Points
  */
 export async function handleGMAction(actor, action, currentPoints, baselinePoints) {
+  if (!game.user.isGM) {
+    ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Messages.GMOnlyAction'));
+    return;
+  }
+
   let newPoints = currentPoints;
 
   switch (action) {
@@ -348,7 +357,6 @@ export async function handleGMAction(actor, action, currentPoints, baselinePoint
       newPoints = Math.max(currentPoints - 1, 0);
       break;
     case 'reset':
-      // Refresh up to the level baseline without removing excess points.
       newPoints = Math.max(currentPoints, baselinePoints);
       break;
     case 'set-zero':
@@ -360,10 +368,19 @@ export async function handleGMAction(actor, action, currentPoints, baselinePoint
 
   await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
 
-  // Emit socket to sync
+  await logHeroPointSpending(
+    actor.id,
+    actor.name,
+    Math.abs(newPoints - currentPoints),
+    newPoints,
+    action
+  );
+
   emitSocketMessage('updateHeroPoints', {
     actorId: actor.id,
     points: newPoints,
+    previous: currentPoints,
+    action,
     userId: game.user.id
   });
 

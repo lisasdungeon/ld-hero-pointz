@@ -4,19 +4,6 @@ import { installMocks, restoreGlobals, makeActor } from './foundry-mock.mjs';
 
 test.afterEach(() => restoreGlobals());
 
-test('LdHeroPointzLogViewer._getDialogRoot normalizes html roots', async () => {
-  installMocks();
-  const { LdHeroPointzLogViewer } = await import('../src/apps/LogViewer.js');
-
-  const el = new HTMLElement();
-  assert.equal(LdHeroPointzLogViewer._getDialogRoot(el), el);
-  assert.equal(LdHeroPointzLogViewer._getDialogRoot([el]), el);
-  assert.equal(LdHeroPointzLogViewer._getDialogRoot({ element: el }), el);
-  assert.equal(LdHeroPointzLogViewer._getDialogRoot({ element: [el] }), el);
-  assert.equal(LdHeroPointzLogViewer._getDialogRoot(null), null);
-  assert.equal(LdHeroPointzLogViewer._getDialogRoot({}), null);
-});
-
 test('LdHeroPointzLogViewer._prepareContext exposes log summary fields', async () => {
   const actor = makeActor({ id: 'a1', flags: { heroPoints: 2 } });
   const { game } = installMocks({ actors: [actor], user: { id: 'gm1', isGM: true } });
@@ -99,9 +86,11 @@ test('LdHeroPointzLogViewer._attachPartListeners wires export/clear/filter/reduc
   form.appendChild(filter);
 
   const entryA = document.createElement('div');
+  entryA.className = 'log-entry';
   entryA.dataset.actorId = 'a1';
   form.appendChild(entryA);
   const entryB = document.createElement('div');
+  entryB.className = 'log-entry';
   entryB.dataset.actorId = 'a2';
   form.appendChild(entryB);
 
@@ -116,27 +105,14 @@ test('LdHeroPointzLogViewer._attachPartListeners wires export/clear/filter/reduc
   form.querySelectorAll = (sel) => {
     if (sel === '.ld-hero-pointz-clear-actor-log') return [clearActor];
     if (sel === '.ld-hero-pointz-reduce-actor-points') return [reduceBtn];
-    if (sel === '[data-actor-id]') return [entryA, entryB];
+    if (sel === '.log-entry') return [entryA, entryB];
     return [];
   };
 
-  // mock Dialog for confirm/cancel paths
   let confirmValue = true;
-  globalThis.Dialog = {
-    confirm: async () => confirmValue
-  };
-  class FakeDialog {
-    constructor(opts) {
-      this.opts = opts;
-    }
-    render() {
-      FakeDialog.last = this;
-      return this;
-    }
-  }
-  globalThis.Dialog = Object.assign(function Dialog(opts) {
-    return new FakeDialog(opts);
-  }, { confirm: async () => confirmValue });
+  let inputValue = { amount: '2' };
+  globalThis.foundry.applications.api.DialogV2.confirm = async () => confirmValue;
+  globalThis.foundry.applications.api.DialogV2.input = async () => inputValue;
 
   const originalCreate = document.createElement;
   const clicks = [];
@@ -183,30 +159,15 @@ test('LdHeroPointzLogViewer._attachPartListeners wires export/clear/filter/reduc
   assert.equal(entryB.style.display, '');
 
   // reduce dialog
-  reduceBtn._listeners.click[0]({ currentTarget: reduceBtn });
-  assert.ok(FakeDialog.last);
-
-  const amountEl = document.createElement('input');
-  amountEl.id = 'reduce-amount';
-  amountEl.value = '2';
-  const dialogRoot = document.createElement('div');
-  dialogRoot.appendChild(amountEl);
-  dialogRoot.querySelector = (sel) => (sel === '#reduce-amount' ? amountEl : null);
-  Object.setPrototypeOf(dialogRoot, HTMLElement.prototype);
-
-  await FakeDialog.last.opts.buttons.reduce.callback(dialogRoot);
+  await reduceBtn._listeners.click[0]({ currentTarget: reduceBtn });
   assert.ok(ui._info?.length >= 1 || actor.calls.setFlag.length >= 1);
 
-  // missing amount input
-  const emptyRoot = document.createElement('div');
-  emptyRoot.querySelector = () => null;
-  Object.setPrototypeOf(emptyRoot, HTMLElement.prototype);
-  await FakeDialog.last.opts.buttons.reduce.callback(emptyRoot);
+  inputValue = null;
+  await reduceBtn._listeners.click[0]({ currentTarget: reduceBtn });
   assert.ok(ui._error?.length >= 1);
 
-  // amount out of range (no-op path)
-  amountEl.value = '99';
-  await FakeDialog.last.opts.buttons.reduce.callback(dialogRoot);
+  inputValue = { amount: '99' };
+  await reduceBtn._listeners.click[0]({ currentTarget: reduceBtn });
 
   // non-main partId early path
   app._attachPartListeners('other', form, {});
@@ -283,6 +244,12 @@ test('LdHeroPointz management app prepares context and attaches listeners', asyn
   assert.equal(uuidInput.value, actor.uuid);
   assert.ok(ui._info?.length >= 1);
 
+  // award: non-positive
+  pointsInput.value = '0';
+  await awardBtn._listeners.click[0]({});
+  assert.ok(ui._warn?.length >= 1);
+  pointsInput.value = '2';
+
   // award: no uuid
   await game.settings.set('ld-hero-pointz', 'targetActorUuid', '');
   await awardBtn._listeners.click[0]({});
@@ -311,8 +278,13 @@ test('LdHeroPointz management app prepares context and attaches listeners', asyn
     console.error = origError;
   }
 
+  // award: non-GM
+  game.user.isGM = false;
+  await awardBtn._listeners.click[0]({});
+  game.user.isGM = true;
+
   // open log viewer
-  logBtn._listeners.click[0]({});
+  await logBtn._listeners.click[0]({});
 
   // non-form part
   app._attachPartListeners('other', form, {});

@@ -1,18 +1,18 @@
 /**
- * LD Hero Pointz Application Class
- * Placeholder for future GM controls or additional UI
+ * Copyright 2026 Lisa's Dungeon
+ * GM management window for targeting an actor and awarding hero points.
  */
 import { emitSocketMessage } from '../socket.js';
 import { logHeroPointSpending } from '../logger.js';
-import { LdHeroPointzLogViewer } from './LogViewer.js';
 
 export class LdHeroPointz extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
   static DEFAULT_OPTIONS = {
-    id: 'ld-hero-pointz',
+    id: 'ld-hero-pointz-manager',
+    classes: ['ld-hero-pointz'],
     tag: 'form',
     window: {
       icon: 'fas fa-shield-alt',
-      title: 'LD Hero Pointz',
+      title: 'LDHEROEPOINTZ.Menu.ManagementName',
       resizable: true
     },
     position: {
@@ -37,34 +37,40 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
     super._attachPartListeners(partId, htmlElement, options);
 
     if (partId === 'form') {
-      const htmlElement_obj = htmlElement instanceof HTMLElement ? htmlElement : htmlElement[0];
+      const root = htmlElement instanceof HTMLElement ? htmlElement : htmlElement[0];
 
-      // Save UUID on change
-      htmlElement_obj.querySelector('input[name="targetActorUuid"]')?.addEventListener('change', event => {
+      root.querySelector('input[name="targetActorUuid"]')?.addEventListener('change', event => {
         const value = event.target.value;
         game.settings.set('ld-hero-pointz', 'targetActorUuid', value);
       });
 
-      // Get UUID from selection
-      htmlElement_obj.querySelector('.ld-hero-pointz-get-uuid')?.addEventListener('click', event => {
+      root.querySelector('.ld-hero-pointz-get-uuid')?.addEventListener('click', event => {
         const tokens = canvas.tokens.controlled;
         if (tokens.length === 0) {
           return ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Messages.NoTokenSelected'));
         }
         const actor = tokens[0].actor;
         if (!actor) return;
-        
+
         const uuid = actor.uuid;
-        const uuidInput = htmlElement_obj.querySelector('input[name="targetActorUuid"]');
+        const uuidInput = root.querySelector('input[name="targetActorUuid"]');
         uuidInput.value = uuid;
         uuidInput.dispatchEvent(new Event('change', { bubbles: true }));
         ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.TargetSet', { name: actor.name }));
       });
 
-      // Award points
-      htmlElement_obj.querySelector('.ld-hero-pointz-award-points')?.addEventListener('click', async event => {
+      root.querySelector('.ld-hero-pointz-award-points')?.addEventListener('click', async event => {
+        if (!game.user.isGM) {
+          return ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Messages.GMOnlyAction'));
+        }
+
         const uuid = game.settings.get('ld-hero-pointz', 'targetActorUuid');
-        const pointsToAdd = parseInt(htmlElement_obj.querySelector('input[name="pointsToAdd"]').value) || 0;
+        const raw = parseInt(root.querySelector('input[name="pointsToAdd"]')?.value, 10);
+        const pointsToAdd = Number.isFinite(raw) ? raw : 0;
+
+        if (pointsToAdd <= 0) {
+          return ui.notifications.warn(game.i18n.localize('LDHEROEPOINTZ.Messages.PointsMustBePositive'));
+        }
 
         if (!uuid) {
           return ui.notifications.error(game.i18n.localize('LDHEROEPOINTZ.Messages.NoTargetUuid'));
@@ -72,7 +78,7 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
 
         try {
           const actor = await fromUuid(uuid);
-          if (!actor || actor.documentName !== "Actor") {
+          if (!actor || actor.documentName !== 'Actor') {
             return ui.notifications.error(game.i18n.localize('LDHEROEPOINTZ.Messages.InvalidActorUuid'));
           }
 
@@ -80,8 +86,7 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
           const newPoints = currentPoints + pointsToAdd;
 
           await actor.setFlag('ld-hero-pointz', 'heroPoints', newPoints);
-          
-          // Log the award
+
           await logHeroPointSpending(
             actor.id,
             actor.name,
@@ -89,14 +94,15 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
             newPoints,
             'awarded'
           );
-          
-          // Emit socket to sync
+
           emitSocketMessage('updateHeroPoints', {
             actorId: actor.id,
             points: newPoints,
+            previous: currentPoints,
+            action: 'awarded',
             userId: game.user.id
           });
-          
+
           ui.notifications.info(game.i18n.format('LDHEROEPOINTZ.Messages.Awarded', {
             points: pointsToAdd,
             name: actor.name,
@@ -108,9 +114,9 @@ export class LdHeroPointz extends foundry.applications.api.HandlebarsApplication
         }
       });
 
-      // Open Activity Log
-      htmlElement_obj.querySelector('.ld-hero-pointz-open-log-viewer')?.addEventListener('click', event => {
-        new LdHeroPointzLogViewer().render(true);
+      root.querySelector('.ld-hero-pointz-open-log-viewer')?.addEventListener('click', async event => {
+        const { LdHeroPointzLogViewer } = await import('./LogViewer.js');
+        new LdHeroPointzLogViewer().render({ force: true });
       });
     }
   }

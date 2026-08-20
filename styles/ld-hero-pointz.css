@@ -120,3 +120,18 @@
 .ld-hero-pointz-settings .ld-hero-pointz-award-points:hover {
   background: #e6d4a8;
 }
+
+.ld-hero-pointz-settings .ld-hero-pointz-open-log-viewer {
+  width: 100%;
+  padding: 8px;
+  font-weight: bold;
+  background: #f4e4bc;
+  border: 2px solid #8b4513;
+  color: #8b4513;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ld-hero-pointz-settings .ld-hero-pointz-open-log-viewer:hover {
+  background: #e6d4a8;
+}
