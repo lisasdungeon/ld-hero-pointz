@@ -11,6 +11,9 @@ test('registerSettings registers both menus and world settings', async () => {
 
   assert.ok(settingsStore.has('ld-hero-pointz.menu.managementMenu'));
   assert.ok(settingsStore.has('ld-hero-pointz.menu.logViewerMenu'));
+  const AppV2 = foundry.applications.api.ApplicationV2;
+  assert.equal(settingsStore.get('ld-hero-pointz.menu.managementMenu').type.prototype instanceof AppV2, true);
+  assert.equal(settingsStore.get('ld-hero-pointz.menu.logViewerMenu').type.prototype instanceof AppV2, true);
   assert.equal(game.settings.get('ld-hero-pointz', 'autoAward'), true);
   assert.equal(game.settings.get('ld-hero-pointz', 'targetActorUuid'), '');
   assert.deepEqual(game.settings.get('ld-hero-pointz', 'heroPointsLog'), []);

@@ -4,12 +4,20 @@
  */
 
 /**
- * Thin menu shell used by game.settings.registerMenu. Foundry only needs
- * construct + render. The real ApplicationV2 class is imported then.
+ * Thin ApplicationV2 shell used by game.settings.registerMenu.
+ * Foundry v13+ requires a FormApplication or ApplicationV2 subclass.
+ * The real window class is imported when the menu is opened.
  */
 function createLazyMenu(loader) {
-  return class LazyMenu {
+  return class LazyMenu extends foundry.applications.api.ApplicationV2 {
+    static DEFAULT_OPTIONS = {
+      id: 'ld-hero-pointz-lazy-menu',
+      window: { title: 'LD Hero Pointz' },
+      position: { width: 10, height: 10 }
+    };
+
     constructor(...args) {
+      super();
       this._args = args;
     }
 
@@ -22,6 +30,29 @@ function createLazyMenu(loader) {
 }
 
 export function registerSettings() {
+  game.settings.register('ld-hero-pointz', 'targetActorUuid', {
+    scope: 'world',
+    config: false,
+    type: String,
+    default: ''
+  });
+
+  game.settings.register('ld-hero-pointz', 'autoAward', {
+    name: 'LDHEROEPOINTZ.Settings.AutoAwardName',
+    hint: 'LDHEROEPOINTZ.Settings.AutoAwardHint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register('ld-hero-pointz', 'heroPointsLog', {
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: []
+  });
+
   game.settings.registerMenu('ld-hero-pointz', 'managementMenu', {
     name: 'LDHEROEPOINTZ.Menu.ManagementName',
     label: 'LDHEROEPOINTZ.Menu.ManagementLabel',
@@ -44,29 +75,6 @@ export function registerSettings() {
       return LdHeroPointzLogViewer;
     }),
     restricted: true
-  });
-
-  game.settings.register('ld-hero-pointz', 'targetActorUuid', {
-    scope: 'world',
-    config: false,
-    type: String,
-    default: ''
-  });
-
-  game.settings.register('ld-hero-pointz', 'autoAward', {
-    name: 'LDHEROEPOINTZ.Settings.AutoAwardName',
-    hint: 'LDHEROEPOINTZ.Settings.AutoAwardHint',
-    scope: 'world',
-    config: true,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register('ld-hero-pointz', 'heroPointsLog', {
-    scope: 'world',
-    config: false,
-    type: Array,
-    default: []
   });
 }
 

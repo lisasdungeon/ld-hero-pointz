@@ -4,7 +4,7 @@ D&D 5e hero point management for Foundry VTT with GM controls, synchronized play
 
 ## Module details
 
-- Version: `1.3.14`
+- Version: `1.3.15`
 - Compatibility: Foundry VTT `13+` (verified `14`)
 - Game System: D&D 5e / D&D 2024
 - Distribution: Premium Patreon-gated module

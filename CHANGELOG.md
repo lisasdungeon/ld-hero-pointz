@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.15
+
+- Fixed Foundry V14 init crash: settings menus now register ApplicationV2 subclasses. The previous lazy shells were plain classes, so `registerMenu` threw and `heroPointsLog` never registered.
+
 ## 1.3.14
 
 - Fixed the actor sheet header still showing "Reserves" instead of "Hero Points"

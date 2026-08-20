@@ -165,6 +165,14 @@ export function installMocks(options = {}) {
         settingsStore.set(`${storeKey}__config`, config);
       },
       registerMenu(moduleId, key, config) {
+        const type = config?.type;
+        const AppV2 = globalThis.foundry?.applications?.api?.ApplicationV2;
+        const FormApplication = globalThis.FormApplication;
+        const isV2 = Boolean(AppV2) && type && (type === AppV2 || type.prototype instanceof AppV2);
+        const isV1 = Boolean(FormApplication) && type && (type === FormApplication || type.prototype instanceof FormApplication);
+        if (!isV2 && !isV1) {
+          throw new Error('You must provide a menu type that is a FormApplication or ApplicationV2 instance or subclass');
+        }
         settingsStore.set(`${moduleId}.menu.${key}`, config);
       },
       get(moduleId, key) {
